@@ -1,0 +1,25 @@
+Hello and welcome to your online work schedule!
+
+Before you get started, I did want to provide you with some technical details of how this all works to ensure you are comfortable with the program. Should there be anything you do not agree with in the information below, please send an email to owner of this program requesting that you are removed from the program. If no email is received, you will receive automatic calendar updates and emails from this program.
+
+--
+
+Security
+To make your schedule accessible to all your devices and programs, the calendar must be: 1) publically available; and 2) hosted on my own personal server.
+1. This means that anyone with your schedule link could view your calendar. To minimize the risk of this, the calendar file does not actually use your name, but rather a code name. These names are generally a long enough/complex enough that it makes someone guessing your calendar very unlikely.
+2.	While my own servers are also secured, I would suspect the safety of the AHS Network would still be superior. To my knowledge all major steps have been taken to secure the server, but this can change rapidly and it can take time to implement fixes.
+
+Disclaimers
+This program relies on a number of assumptions to properly generate a correct work schedule. There are numerous factors that can cause issues with the generation of these schedules, such as new shift codes, typos in the Microsoft Excel document, or duplicate names on the spreadsheet. While I do try to account for many of these, it will never be perfect. There is always a risk a shift could be interpreted incorrectly or missed entirely. To reduce these risks, you will be emailed whenever your updated schedule varies from the previous version of the schedule. You will also receive a list of all the assumptions the program made. You are strongly encouraged to review these emails for any possible errors.
+There is also the risk that there will be an issue with my own servers that may cause delays in schedule updates. While I do try to limit these occurrences, there is always the possibility of unexpected issues that can take several days (or longer) to resolve. Finally, this whole project is done on my own spare time with my own resources. I am happy to provide some degree of assistance in using these programs (largely in the forms of tutorials or how-to documents), but from a practical standpoint I cannot provide individual and personalized tech support. I also cannot dedicate large portions of the work day to this, as it does not fall within the scope of my AHS employment.
+
+Customizability
+I do offer some degree of customization to you schedule. Due to the potential volume of requests from multiple users, the options are limited to the following:
+- Choosing your anonymous calendar name (pending availability of names)
+- Have calendar generate shifts as "Full Day" events
+- Customize start and stop times for specific shifts
+Should you wish to make use of any of these customizations, please let me know and I will update it at my earliest convenience.
+
+--
+
+All this information can be found at http://www.studybuffalo.com/calendar/
