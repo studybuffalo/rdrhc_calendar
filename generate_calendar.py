@@ -34,17 +34,17 @@ def collect_config(config):
     weekday_start = datetime.strptime(
         config.get("schedules", "default_weekday_start"),
         "%H:%M"
-    ).time()
+    )
     
     weekend_start = datetime.strptime(
         config.get("schedules", "default_weekend_start"),
         "%H:%M"
-    ).time()
+    )
 
     stat_start = datetime.strptime(
         config.get("schedules", "default_stat_start"),
         "%H:%M"
-    ).time()
+    )
 
     weekday_duration = config.getfloat("schedules", "default_weekday_duration")
     weekday_hours = int(weekday_duration)
@@ -102,12 +102,12 @@ def collect_config(config):
             "date_col": config.getint("schedules", "date_col_t")
         },
         "calendar_defaults": {
-            "weekday_start": weekday_start,
-            "weekday_end": weekday_end,
-            "weekend_start": weekend_start,
-            "weekend_end": weekend_end,
-            "stat_start": stat_start,
-            "stat_end": stat_end,
+            "weekday_start": weekday_start.time(),
+            "weekday_end": weekday_end.time(),
+            "weekend_start": weekend_start.time(),
+            "weekend_end": weekend_end.time(),
+            "stat_start": stat_start.time(),
+            "stat_end": stat_end.time(),
             "weekday_duration": weekday_duration,
             "weekday_hours": weekday_hours,
             "weekday_minutes": weekday_minutes,

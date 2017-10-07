@@ -154,9 +154,9 @@ def email_schedule(user, config, schedule):
 
             text.append("MISSING SHIFT CODES")
             text.append("------------------------------------")
-            text.append(("A default shift time of {} to {} (weekdays), or "
-                        "{} to {} (weekends), or {} to {} (stats) has been "
-                        "used for these shifts").format(
+            text.append(("A default shift time of {} to {} (weekdays), "
+                        "{} to {} (weekends), or {} to {} (statutory holidays) "
+                        "has been used for these shifts").format(
                             defaults["weekday_start"].strftime("%H:%M"),
                             defaults["weekday_end"].strftime("%H:%M"),
                             defaults["weekend_start"].strftime("%H:%M"),
@@ -166,9 +166,16 @@ def email_schedule(user, config, schedule):
                         ))
             
             html.append("<b>MISSING SHIFT CODES</b>")
-            html.append("<br><i>A default shift time of 07:00 to 22:00 "
-                        "(weekdays) or 07:00 to 19:30 (weekends and stats) "
-                        "has been used for these shifts</i>")
+            html.append(("<br><i>A default shift time of {} to {} (weekdays), "
+                         "{} to {} (weekends), or {} to {} (statutory " 
+                         "holidays) has been used for these shifts</i>").format(
+                            defaults["weekday_start"].strftime("%H:%M"),
+                            defaults["weekday_end"].strftime("%H:%M"),
+                            defaults["weekend_start"].strftime("%H:%M"),
+                            defaults["weekend_end"].strftime("%H:%M"),
+                            defaults["stat_start"].strftime("%H:%M"),
+                            defaults["stat_end"].strftime("%H:%M"),
+                        ))
             html.append("<ul>")
             
             for m in schedule.missing:
