@@ -558,7 +558,7 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, conf
         changed_shifts = []
 
         for new_shift in schedule:
-            if old_shift.start_date.date() == new_shift.start_datetime.date():
+            if old_shift.start_date == new_shift.start_datetime.date():
                 shift_delete = False
 
                 if old_shift.shift_code == new_shift.shift_code:
@@ -586,7 +586,7 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, conf
         shift_add = True
 
         for old_shift in old_schedule:
-            if old_shift.start_date.date() == new_shift.start_datetime.date():
+            if old_shift.start_date == new_shift.start_datetime.date():
                 shift_add = False
 
         if shift_add == True:

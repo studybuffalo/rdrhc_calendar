@@ -47,10 +47,7 @@ def update_db(user, schedule, Shift):
     """Uploads user schedule to Django Database"""
 
     # Remove the user's old schedule
-    t = Shift.objects.filter(user__exact=user.id)
-
-    for i in t:
-        print(i)
+    Shift.objects.filter(user__exact=user.id).delete()
 
     # Upload the new schedule
     for s in schedule:
@@ -62,3 +59,4 @@ def update_db(user, schedule, Shift):
         )
 
         upload.save()
+    
