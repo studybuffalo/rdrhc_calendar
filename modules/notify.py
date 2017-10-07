@@ -1,34 +1,19 @@
 import configparser
+from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import logging
 import smtplib
 
+# Setup logger
+log = logging.getLogger(__name__)
 
 def email_welcome(user, config):
     """Sends a welcome email to any new user"""
 
-    # Get dates of the user's sign up
-    end = datetime.now()
-    start = end - timedelta(days=1)
-    
     # Check if user needs email sent (signed up in past 24 hours)
-    try:
-        if user.start > start and user.start < end:
-            sendEmail = True
-        else:
-            sendEmail = False
-    except:
-        sendEmail = False
-
-        log.exception("Unable to check %s's start date" % user.name)
-
-    # Send email if user started in past 24 hours
-    if sendEmail:
-        server = priCon.get("email", "server")
-        login = priCon.get("email", "user")
-        pw = priCon.get("email", "password")
-        fromEmail = login
+    if user.first_email_sent == False:
+        fromEmail = config["email"]["from_email"]
         toEmail = user.email
         subject = "Welcome to Your New Online Schedule"
 
@@ -38,7 +23,7 @@ def email_welcome(user, config):
         content['Subject'] = subject
 
         # Collects text welcome email from template file
-        textLoc = pubCon.get("email", "welcome_text", raw=True)
+        textLoc = config["email"]["welcome_text"]
         
         try:
             with open(textLoc, "r") as textFile:
@@ -48,7 +33,7 @@ def email_welcome(user, config):
             return
 
         # Collects html welcome email from template file
-        htmlLoc = pubCon.get("email", "welcome_html", raw=True)
+        htmlLoc = config["email"]["welcome_html"]
             
         try:
             with open(htmlLoc, "r") as htmlFile:
@@ -66,26 +51,29 @@ def email_welcome(user, config):
         
         # Attempt to send email
         try:
-            log.info("Sending welcome email to %s" % user.name)
+            if config["debug"]["email_console"]:
+                log.debug(content.as_string())
+            else:
+                log.info("Sending welcome email to %s" % user.name)
+                server = smtplib.SMTP(config["email"]["server"])
+                login = config["email"]["user"]
+                pw = config["email"]["password"]
 
-            server = smtplib.SMTP(server)
-            server.ehlo()
-            server.starttls()
-            server.login(login, pw)
-            server.sendmail(fromEmail, toEmail, content.as_string())
-            server.quit()
+                server.ehlo()
+                server.starttls()
+                server.login(login, pw)
+                server.sendmail(fromEmail, toEmail, content.as_string())
+                server.quit()
         except:
             log.exception("Unable to send welcome email to %s" % user.name)
 
-def email_schedule(user, config, schedule_details):
+def email_schedule(user, config, schedule):
     """Emails user with any schedule changes"""
 
     if (len(schedule.additions) or len(schedule.deletions) or 
         len(schedule.changes) or len(schedule.missing) or len(schedule.null)):
         
-        login = priCon.get('email', 'user')
-        pw = priCon.get('email', 'password')
-        fromEmail = login
+        fromEmail = config["email"]["from_email"]
         toEmail = user.email
         subject = "RDRHC Schedule Changes"
         
@@ -162,11 +150,20 @@ def email_schedule(user, config, schedule_details):
             html.append("</ul>")
             
         if len(schedule.missing):
+            defaults = config["calendar_defaults"]
+
             text.append("MISSING SHIFT CODES")
             text.append("------------------------------------")
-            text.append("A default shift time of 07:00 to 22:00 (weekdays) "
-                        "or 07:00 to 19:30 (weekends and stats) has been "
-                        "used for these shifts")
+            text.append(("A default shift time of {} to {} (weekdays), or "
+                        "{} to {} (weekends), or {} to {} (stats) has been "
+                        "used for these shifts").format(
+                            defaults["weekday_start"].strftime("%H:%M"),
+                            defaults["weekday_end"].strftime("%H:%M"),
+                            defaults["weekend_start"].strftime("%H:%M"),
+                            defaults["weekend_end"].strftime("%H:%M"),
+                            defaults["stat_start"].strftime("%H:%M"),
+                            defaults["stat_end"].strftime("%H:%M"),
+                        ))
             
             html.append("<b>MISSING SHIFT CODES</b>")
             html.append("<br><i>A default shift time of 07:00 to 22:00 "
@@ -211,14 +208,10 @@ def email_schedule(user, config, schedule_details):
             
         # Add email footer
         # Generate File Name
-        fileName = user.codeName
+        fileName = user.calendar_name
 
         # Generate File Location
-        if user.public is True:
-            fileLoc = fileName
-        elif user.public is False:
-            fileLoc = "private/%s" % fileName
-
+        fileLoc = fileName
 
         text.append("The address for your schedule is: "
                     "http://www.studybuffalo.com/calendar/%s.ics" % fileLoc)
@@ -263,13 +256,19 @@ def email_schedule(user, config, schedule_details):
         content.attach(htmlBody)
         
         try:
-            log.info("Sending update email to %s" % user.name)
-            
-            server = smtplib.SMTP('smtp.gmail.com:587')
-            server.ehlo()
-            server.starttls()
-            server.login(login, pw)
-            server.sendmail(fromEmail, toEmail, content.as_string())
-            server.quit()
+            if config["debug"]["email_console"]:
+                log.debug(content.as_string())
+            else:
+                log.info("Sending update email to %s" % user.name)
+
+                login = config["email"]["user"]
+                pw = config["email"]["password"]
+
+                server = smtplib.SMTP(config["email"]["server"])
+                server.ehlo()
+                server.starttls()
+                server.login(login, pw)
+                server.sendmail(fromEmail, toEmail, content.as_string())
+                server.quit()
         except:
             log.exception("Unable to send update email to %s" % user.name)

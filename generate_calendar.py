@@ -20,6 +20,7 @@
 """
 
 import configparser
+from datetime import datetime, timedelta
 from django.core.wsgi import get_wsgi_application
 import logging
 import logging.config
@@ -28,6 +29,108 @@ import os
 import sys
 from unipath import Path
 
+def collect_config(config):
+    """Collects and formats all the require configuration data"""
+    weekday_start = datetime.strptime(
+        config.get("schedules", "default_weekday_start"),
+        "%H:%M"
+    ).time()
+    
+    weekend_start = datetime.strptime(
+        config.get("schedules", "default_weekend_start"),
+        "%H:%M"
+    ).time()
+
+    stat_start = datetime.strptime(
+        config.get("schedules", "default_stat_start"),
+        "%H:%M"
+    ).time()
+
+    weekday_duration = config.getfloat("schedules", "default_weekday_duration")
+    weekday_hours = int(weekday_duration)
+    weekday_minutes = int((weekday_duration*60) % 60)
+
+    weekend_duration = config.getfloat("schedules", "default_weekend_duration")
+    weekend_hours = int(weekend_duration)
+    weekend_minutes = int((weekend_duration*60) % 60)
+
+    stat_duration = config.getfloat("schedules", "default_stat_duration")
+    stat_hours = int(stat_duration)
+    stat_minutes = int((stat_duration*60) % 60)
+
+    weekday_end = weekday_start + timedelta(
+        hours=weekday_hours, 
+        minutes=weekday_minutes
+    )
+
+    weekend_end = weekend_start + timedelta(
+        hours=weekend_hours, 
+        minutes=weekend_minutes
+    )
+
+    stat_end = stat_start + timedelta(
+        hours=stat_hours, 
+        minutes=stat_minutes
+    )
+
+    return {
+        "a_excel": {
+            "sheet": config.get("schedules", "sheet_a"),
+            "name_row": config.getint("schedules", "name_row_a"),
+            "col_start": config.getint("schedules", "name_col_start_a"),
+            "col_end": config.getint("schedules", "name_col_end_a") ,
+            "row_start": config.getint("schedules", "shift_row_start_a"),
+            "row_end": config.getint("schedules", "shift_row_end_a"),
+            "date_col": config.getint("schedules", "date_col_a")
+        },
+        "p_excel": {
+            "sheet": config.get("schedules", "sheet_p"),
+            "name_row": config.getint("schedules", "name_row_p"),
+            "col_start": config.getint("schedules", "name_col_start_p"),
+            "col_end": config.getint("schedules", "name_col_end_p") ,
+            "row_start": config.getint("schedules", "shift_row_start_p"),
+            "row_end": config.getint("schedules", "shift_row_end_p"),
+            "date_col": config.getint("schedules", "date_col_p")
+        },
+        "t_excel": {
+            "sheet": config.get("schedules", "sheet_t"),
+            "name_row": config.getint("schedules", "name_row_t"),
+            "col_start": config.getint("schedules", "name_col_start_t"),
+            "col_end": config.getint("schedules", "name_col_end_t") ,
+            "row_start": config.getint("schedules", "shift_row_start_t"),
+            "row_end": config.getint("schedules", "shift_row_end_t"),
+            "date_col": config.getint("schedules", "date_col_t")
+        },
+        "calendar_defaults": {
+            "weekday_start": weekday_start,
+            "weekday_end": weekday_end,
+            "weekend_start": weekend_start,
+            "weekend_end": weekend_end,
+            "stat_start": stat_start,
+            "stat_end": stat_end,
+            "weekday_duration": weekday_duration,
+            "weekday_hours": weekday_hours,
+            "weekday_minutes": weekday_minutes,
+            "weekend_duration": weekday_duration,
+            "weekend_hours": weekday_hours,
+            "weekend_minutes": weekday_minutes,
+            "stat_duration": weekday_duration,
+            "stat_hours": weekday_hours,
+            "stat_minutes": weekday_minutes,
+        },
+        "email": {
+            "server": config.get("email", "server"),
+            "user": config.get("email", "user"),
+            "password": config.get("email", "password"),
+            "from_email": config.get("email", "from_email"),
+            "welcome_text": config.get("email", "welcome_text", raw=True),
+            "welcome_html": config.get("email", "welcome_html", raw=True),
+        },
+        "debug": {
+            "email_console": config.getboolean("debug", "email_console")
+        }
+    }
+    
 # Set root for this program to allow absolute paths
 root = Path(sys.argv[1])
 
@@ -51,6 +154,9 @@ from rdrhc_calendar.models import CalendarUser, ShiftCode, StatHoliday, Shift
 
 log.info("STARTING RDRHC CALENDAR GENERATOR")
 
+# Collect all the application configuration values
+app_config = collect_config(config)
+
 # Collect the Excel schedule files
 log.info("Retrieve the Excel Schedules")
 excel_files = retrieve.retrieve_schedules(config)
@@ -63,7 +169,7 @@ users = CalendarUser.objects.all()
 for user in users:
     # Assemble the users schedule
     log.info("Assembling schedule for {0}".format(user.name))
-    schedule = format.assemble_schedule(config, excel_files, user, ShiftCode, StatHoliday, Shift)
+    schedule = format.assemble_schedule(app_config, excel_files, user, ShiftCode, StatHoliday, Shift)
 
     if schedule:
         # Upload the schedule data to the Django server
@@ -73,9 +179,9 @@ for user in users:
         format.generate_calendar(user, schedule.shifts, root)
 
         # If this is the first schedule, email the welcome details
-        notify.email_welcome(user, config)
+        notify.email_welcome(user, app_config)
 
         # Email the user the calendar details
-        notify.email_schedule(user, config, schedule)
+        notify.email_schedule(user, app_config, schedule)
 
 log.info("CALENDAR GENERATION COMPLETE")
