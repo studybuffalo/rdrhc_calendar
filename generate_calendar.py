@@ -125,6 +125,8 @@ def collect_config(config):
             "from_email": config.get("email", "from_email"),
             "welcome_text": config.get("email", "welcome_text", raw=True),
             "welcome_html": config.get("email", "welcome_html", raw=True),
+            "update_text": config.get("email", "update_text", raw=True),
+            "update_html": config.get("email", "update_html", raw=True),
         },
         "debug": {
             "email_console": config.getboolean("debug", "email_console")

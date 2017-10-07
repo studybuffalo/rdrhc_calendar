@@ -81,8 +81,23 @@ def email_schedule(user, config, schedule):
         content['To'] = toEmail
         content['Subject'] = subject
         
-        text = []
-        html = []
+        # Opens the update email (text) file
+        text_loc = config["email"]["update_text"]
+        
+        try:
+            with open(textLoc, "r") as textFile:
+                text = textFile.read().replace("\n", "\r\n")
+        except Exception as e:
+            log.exception("Unable to read welcome email text template")
+
+        # Opens the update email (html) file
+        text_loc = config["email"]["update_text"]
+        
+        try:
+            with open(htmlLoc, "r") as htmlFile:
+                html = htmlFile.read()
+        except Exception as e:
+            log.exception("Unable to read welcome email html template")
         
         # Initial HTML Setup
         html.append("<html>")
@@ -90,10 +105,7 @@ def email_schedule(user, config, schedule):
         html.append("<body>")
         
         # Email opening
-        text.append("Hello %s,\r\n" % user.name)
-        text.append("Please see the following details regarding your work "
-                    "schedule at the Red Deer Regional Hospital Centre:\r\n")
-        
+
         html.append("<p>Hello %s,</p>" % user.name)
         html.append("<p>Please see the following details regarding your "
                     "work schedule at the Red Deer Regional Hospital "
@@ -101,9 +113,7 @@ def email_schedule(user, config, schedule):
         
         # Cycle through changes and create html & text email messages
         if len(schedule.additions):
-            text.append("ADDITIONS")
-            text.append("------------------------------------")
-            
+           
             html.append("<b>ADDITIONS</b>")
             html.append("<ul>")
             
@@ -117,8 +127,7 @@ def email_schedule(user, config, schedule):
             html.append("</ul>")
             
         if len(schedule.deletions):
-            text.append("DELETIONS")
-            text.append("------------------------------------")
+            
             
             html.append("<b>DELETIONS</b>")
             html.append("<ul>")
@@ -133,8 +142,7 @@ def email_schedule(user, config, schedule):
             html.append("</ul>")
             
         if len(schedule.changes):
-            text.append("CHANGES")
-            text.append("------------------------------------")
+            
             
             html.append("<b>CHANGES</b>")
             html.append("<ul>")
@@ -150,19 +158,14 @@ def email_schedule(user, config, schedule):
             
         if len(schedule.missing):
             defaults = config["calendar_defaults"]
-
-            text.append("MISSING SHIFT CODES")
-            text.append("------------------------------------")
-            text.append(("A default shift time of {} to {} (weekdays), "
-                        "{} to {} (weekends), or {} to {} (statutory holidays) "
-                        "has been used for these shifts").format(
-                            defaults["weekday_start"].strftime("%H:%M"),
-                            defaults["weekday_end"].strftime("%H:%M"),
-                            defaults["weekend_start"].strftime("%H:%M"),
-                            defaults["weekend_end"].strftime("%H:%M"),
-                            defaults["stat_start"].strftime("%H:%M"),
-                            defaults["stat_end"].strftime("%H:%M"),
-                        ))
+            format(
+                defaults["weekday_start"].strftime("%H:%M"),
+                defaults["weekday_end"].strftime("%H:%M"),
+                defaults["weekend_start"].strftime("%H:%M"),
+                defaults["weekend_end"].strftime("%H:%M"),
+                defaults["stat_start"].strftime("%H:%M"),
+                defaults["stat_end"].strftime("%H:%M"),
+            )
             
             html.append("<b>MISSING SHIFT CODES</b>")
             html.append(("<br><i>A default shift time of {} to {} (weekdays), "
@@ -187,13 +190,7 @@ def email_schedule(user, config, schedule):
             html.append("</ul>")
             
         if len(schedule.null):
-            text.append("EXCLUDED CODES")
-            text.append("------------------------------------")
-            text.append("These codes are for you to review to ensure no "
-			            "work shifts have been missed; these codes have " 
-			            "interpretted either as holidays/vacations/sick " 
-			            "time/etc. or as being unrelated to start and end " 
-			            "times")
+            
             
             html.append("<b>EXCLUDED CODES</b>")
             html.append("<br><i>These codes are for you to review to "
@@ -219,29 +216,18 @@ def email_schedule(user, config, schedule):
         # Generate File Location
         fileLoc = fileName
 
-        text.append("The address for your schedule is: "
-                    "http://www.studybuffalo.com/calendar/%s.ics" % fileLoc)
-        text.append("")
-        
         html.append("<hr>")
         html.append("<p>The address for your schedule is: "
                     "http://www.studybuffalo.com/calendar/%s.ics </p>" 
                     % fileLoc)
         
         # Add tutorials
-        text.append("For help using the calendar file, please see the "
-                    "tutorials located at: "
-                    "http://www.studybuffalo.com/calendar/")
-        text.append("")
-        
         html.append("<p>For help using the calendar file, please see the "
                     "tutorials located at: "
                     "http://www.studybuffalo.com/calendar/ </p>")
         
         # Add final notice
-        text.append("If you wish to have any modifications made to your "
-                    "shift codes (including exlcuded or missing shift "
-                    "codes), please contact the owner of this program")
+        
         
         html.append("<p>If you wish to have any modifications made to your "
                     "shift codes (including exlcuded or missing shift "
@@ -252,7 +238,6 @@ def email_schedule(user, config, schedule):
         html.append("</html>")
 
         # Assemble final html and txt email content
-        text = "\r\n".join(text)
         html = "".join(html)
         
         textBody = MIMEText(text, 'plain')
