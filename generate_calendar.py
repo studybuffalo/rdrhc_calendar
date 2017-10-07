@@ -20,14 +20,13 @@
 """
 
 import configparser
+from django.core.wsgi import get_wsgi_application
 import logging
 import logging.config
 from modules import format, notify, retrieve, upload
+import os
 import sys
 from unipath import Path
-
-
-# FUNCTIONS
 
 # Set root for this program to allow absolute paths
 root = Path(sys.argv[1])
@@ -41,30 +40,42 @@ log_config = Path(root.parent, "config", "rdrhc_calendar_logging.cfg")
 logging.config.fileConfig(log_config)
 log = logging.getLogger(__name__)
 
+# Setup connection to the Django server
+djangoApp = config.get("django", "location")
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "studybuffalo.settings")
+sys.path.append(djangoApp)
+application = get_wsgi_application()
+
+from rdrhc_calendar.models import CalendarUser, ShiftCode, StatHoliday, Shift
+
 log.info("STARTING RDRHC CALENDAR GENERATOR")
 
 # Collect the Excel schedule files
+log.info("Retrieve the Excel Schedules")
 excel_files = retrieve.retrieve_schedules(config)
 
 # Collect a list of all the user names
-users = None
+log.info("Retrieving all calendar users")
+users = CalendarUser.objects.all()
 
 # Cycle through each user and process their schedule
 for user in users:
     # Assemble the users schedule
-    schedule = format.assemble_schedule(config, excel_files, user)
+    log.info("Assembling schedule for {0}".format(user.name))
+    schedule = format.assemble_schedule(config, excel_files, user, ShiftCode, StatHoliday, Shift)
 
     if schedule:
         # Upload the schedule/missing shift data to the Django server
-        upload.update_db(user, schedule)
+        # upload.update_db(user, schedule)
 
         # Generate and the iCal file to the Django server
-        format.generate_calendar(user, schedule)
+        format.generate_calendar(user, schedule.shifts, root)
 
         # If this is the first schedule, email the welcome details
-        notify.email_welcome(user, schedule)
+        # notify.email_welcome(user, schedule)
 
         # Email the user the calendar details
-        notify.email_schedule(user, schedule)
+        # notify.email_schedule(user, schedule)
 
 log.info("CALENDAR GENERATION COMPLETE")

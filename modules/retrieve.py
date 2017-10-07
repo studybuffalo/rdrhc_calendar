@@ -22,15 +22,15 @@ def retrieve_schedules(config):
 
     # Assemble the details for the assistant schedule
     ext_a = config.get("schedules", "type_a")
-    file_name_a = "{0}_{1}.{2}".format(date, "assistant", "ext_a")
+    file_name_a = "{0}_{1}.{2}".format(date, "assistant", ext_a)
 
     # Assemble the details for the pharmacist schedule
     ext_p = config.get("schedules", "type_p")
-    file_name_p = "{0}_{1}.{2}".format(date, "assistant", "ext_p")
+    file_name_p = "{0}_{1}.{2}".format(date, "pharmacist", ext_p)
     
     # Assemble the details for the technician schedule
     ext_t = config.get("schedules", "type_t")
-    file_name_t = "{0}_{1}.{2}".format(date, "assistant", "ext_t")
+    file_name_t = "{0}_{1}.{2}".format(date, "technician", ext_t)
 
     # Return the final details
     return {
