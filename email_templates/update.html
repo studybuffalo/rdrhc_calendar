@@ -1,110 +1,57 @@
 <html>
 	<head></head>
 	<body>
-		<h1>Hello and welcome to your online work schedule!</h1>
-		
-		<p>
-			Before you get started, I did want to provide you with some 
-			technical details of how this all works to ensure you are 
-			comfortable with the program. Should there be anything you do not 
-			agree with in the information below, please send an email to the
-			owner of this program requesting that you are removed from the 
-			program. If no email is received, you will receive automatic 
-			calendar updates and emails from this program.
-		</p>
+        <p>
+            Hello {{ user_name }}
+        </p>
+        <p>
+            Please see the following details regarding your work schedule at the Red Deer Regional Hospital Centre:
+        </p>
+        
+        {% block additions %}
+        <p>
+            <b>ADDITIONS</b>
+            <ul>{{ additions }}</ul>
+        </p>
+        {% block additions %}
+        {% block deletions %}
+        <p>
+            <b>DELETIONS</b>
+            <ul>{{ deletions }}</ul>
+        </p>
+        {% block deletions %}
+        {% block changes %}
+        <p>
+            <b>CHANGES</b>
+            <ul>{{ changes }}</ul>
+        </p>
+        {% block changes %}
+        {% block missing %}
+        <p>
+            <b>MISSING SHIFT CODES</b><br>
+            <i>A default shift time of {{ weekday_start }} to {{ weekday_end }} (weekdays), {{ weekend_start }} to {{ weekend_end }} (weekends), or {{ stat_start }} to {{ stat_end }} (statutory holidays) has been used for these shifts.</i>
+            <ul>{{ missing }}</ul>
+        </p>
+        {% block missing %}
+        {% block excluded %}
+        <p>
+            <b>EXCLUDED CODES</b><br>
+            <i>These codes are for you to review to ensure no work shifts have been missed; these codes have interpretted either as holidays/vacations/sick time/etc. or as being unrelated to start and end times.</i>
+            <ul>{{ excluded }}</ul>
+        </p>
+        {% block excluded %}
+        <hr>
 
-		<hr>
+        <p>
+            The address for your schedule is: <a href="http://www.studybuffalo.com/calendar/{{ calendar_name }}.ics">http://www.studybuffalo.com/calendar/{{ calendar_name }}.ics</a>.
+        </p>
 
-		<h2>Security</h2>
+        <p>
+            For help using the calendar file, please see the tutorials located at: <a href="http://www.studybuffalo.com/calendar/">http://www.studybuffalo.com/calendar/</a>.
+        </p>
 
-		<p>
-			To make your schedule accessible to all your devices and programs, 
-			the calendar must be: 1) publically available; and 2) hosted on 
-			my own personal server.
-
-			<ol>
-				<li>
-					This means that anyone with your schedule link could view 
-					your calendar. To minimize the risk of this, the calendar 
-					file does not actually use your name, but rather a code 
-					name. These names are generally a long enough/complex 
-					enough that it makes someone guessing your calendar very 
-					unlikely.
-				</li>
-				<li>
-					While my own servers are also secured, I would suspect the 
-					safety of the AHS Network would still be superior. To my 
-					knowledge all major steps have been taken to secure the 
-					server, but this can change rapidly and it can take time 
-					to implement fixes.
-				</li>
-			</ol>
-		</p>
-
-		<h2>Disclaimers</h2>
-		
-		<p>
-			This program relies on a number of assumptions to properly 
-			generate a correct work schedule. There are numerous factors that 
-			can cause issues with the generation of these schedules, such as 
-			new shift codes, typos in the Microsoft Excel document, or 
-			duplicate names on the spreadsheet. While I do try to account for 
-			many of these, it will never be perfect. To reduce these risks, 
-			you will be emailed whenever your updated schedule varies from the 
-			previous version of the schedule. You will also receive a list of 
-			all the assumptions the program made. You are strongly encouraged 
-			to review these emails for any possible errors.
-		</p>
-
-		<p>
-			There is also the risk that there will be an issue with my own 
-			servers that may cause delays in schedule updates. While I do try 
-			to limit these occurrences, there is always the possibility of 
-			unexpected issues that can take several days (or longer) to 
-			resolve.
-		</p>
-
-		<p>
-			Finally, this whole project is done on my own spare time with my 
-			own resources. I am happy to provide some degree of assistance in 
-			using these programs (largely in the forms of tutorials or how-to 
-			documents), but from a practical standpoint I cannot provide 
-			individual and personalized tech support. I also cannot dedicate 
-			large portions of the work day to this, as it does not fall within 
-			the scope of my AHS employment. 
-		</p>
-
-		<h2>Customizability</h2>
-
-		<p>
-			I do offer some degree of customization to you schedule. Due to 
-			the potential volume of requests from multiple users, the options 
-			are limited to the following:
-		</p>
-
-		<ul>
-			<li>
-				Choosing your anonymous calendar name (pending availability of 
-				names)
-			</li>
-			<li>
-				Have calendar generate shifts as "Full Day" events
-			</li>
-			<li>
-				Customize start and stop times for specific shifts
-			</li>
-		</ul>
-
-		<p>
-			Should you wish to make use of any of these customizations, please let me 
-			know and I will update it at my earliest convenience.
-		</p>
-
-		<hr>
-		
-		<p>
-			All this information can be found at 
-			<a href="http://www.studybuffalo.com/calendar/">http://www.studybuffalo.com/calendar/</a>
-		</p>
-	</body>
+        <p>
+            If you wish to have any modifications made to your shift codes (including exlcuded or missing shift codes), please contact the owner of this program.
+        </p>
+</body>
 </html>

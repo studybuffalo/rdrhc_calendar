@@ -2,22 +2,27 @@ Hello {{ user_name }},
 
 Please see the following details regarding your work schedule at the Red Deer Regional Hospital Centre:
 
-ADDITIONS
+{% block additions %}ADDITIONS
 ------------------------------------
+{{ additions }}{% block additions %}
 
-DELETIONS
+{% block deletions %}DELETIONS
 ------------------------------------
+{{ deletions }}{% block deletions %}
 
-CHANGES
+{% block changes %}CHANGES
 ------------------------------------
+{{ changes }}{% block changes %}
 
-MISSING SHIFT CODES
+{% block missing %}MISSING SHIFT CODES
 ------------------------------------
 A default shift time of {{ weekday_start }} to {{ weekday_end}} (weekdays), {{ weekend_start }} to {{ weekend_end }} (weekends), or {{ stat_start }} to {{ stat_end }} (statutory holidays) has been used for these shifts.
+{{ missing }}{% block missing %}
 
-EXCLUDED CODES
+{% block excluded %}EXCLUDED CODES
 ------------------------------------
 These codes are for you to review to ensure no work shifts have been missed; these codes have interpretted either as holidays/vacations/sick time/etc. or as being unrelated to start and end times.
+{{ excluded }}{% block excluded %}
 
 The address for your schedule is: http://www.studybuffalo.com/calendar/{{ calendar_name}}.ics
 
