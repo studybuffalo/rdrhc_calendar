@@ -1,4 +1,7 @@
+import logging
 
+# Setup logger
+log = logging.getLogger(__name__)
 
 def upload_calendar(user):
     """Uploads .ics calendar to server"""
@@ -47,7 +50,12 @@ def update_db(user, schedule, Shift):
     """Uploads user schedule to Django Database"""
 
     # Remove the user's old schedule
-    Shift.objects.filter(user__exact=user.id).delete()
+    try:
+        Shift.objects.filter(user__exact=user.id).delete()
+    except Exception as e:
+        log.warn(
+            "Unable to remove old schedule for {}".format(user.name)
+        )
 
     # Upload the new schedule
     for s in schedule:
@@ -58,5 +66,12 @@ def update_db(user, schedule, Shift):
             text_shift_code=s.shift_code
         )
 
-        upload.save()
+        try:
+            upload.save()
+        except Exception as e:
+            log.warn(
+                "Unable to save shift ({}) to schedule for {}".format(
+                    s.shift_code, user.name
+                )
+            )
     

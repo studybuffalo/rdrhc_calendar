@@ -1,4 +1,11 @@
-def email_welcome(user):
+import configparser
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import logging
+import smtplib
+
+
+def email_welcome(user, config):
     """Sends a welcome email to any new user"""
 
     # Get dates of the user's sign up
@@ -70,7 +77,7 @@ def email_welcome(user):
         except:
             log.exception("Unable to send welcome email to %s" % user.name)
 
-def email_schedule(schedule, user):
+def email_schedule(user, config, schedule_details):
     """Emails user with any schedule changes"""
 
     if (len(schedule.additions) or len(schedule.deletions) or 

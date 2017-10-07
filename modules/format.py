@@ -5,7 +5,7 @@ import openpyxl
 import re
 import xlrd
 
-
+# Setup logger
 log = logging.getLogger(__name__)
 
 # CLASSES

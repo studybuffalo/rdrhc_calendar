@@ -73,9 +73,9 @@ for user in users:
         format.generate_calendar(user, schedule.shifts, root)
 
         # If this is the first schedule, email the welcome details
-        # notify.email_welcome(user, schedule)
+        notify.email_welcome(user, config)
 
         # Email the user the calendar details
-        # notify.email_schedule(user, schedule)
+        notify.email_schedule(user, config, schedule)
 
 log.info("CALENDAR GENERATION COMPLETE")
