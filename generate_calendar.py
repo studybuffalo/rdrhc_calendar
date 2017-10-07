@@ -66,8 +66,8 @@ for user in users:
     schedule = format.assemble_schedule(config, excel_files, user, ShiftCode, StatHoliday, Shift)
 
     if schedule:
-        # Upload the schedule/missing shift data to the Django server
-        # upload.update_db(user, schedule)
+        # Upload the schedule data to the Django server
+        upload.update_db(user, schedule.shifts, Shift)
 
         # Generate and the iCal file to the Django server
         format.generate_calendar(user, schedule.shifts, root)

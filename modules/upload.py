@@ -43,31 +43,22 @@ def upload_calendar(user):
         log.exception("Unable to upload .ics calendar to server for %s" 
                       % user.name)
 
-def update_db(schedule, cursor):
-    """Uploads user schedule to MySQL database"""
+def update_db(user, schedule, Shift):
+    """Uploads user schedule to Django Database"""
 
-    # Delete all items for this user
-    query = "DELETE FROM calendar_schedules WHERE user = %s AND role = %s"
-    args = (user.name, user.role)
+    # Remove the user's old schedule
+    t = Shift.objects.filter(user__exact=user.id)
 
-    try:
-        cursor.execute(query, args)
-    except:
-        log.exception("Unable to remove old schedule from database for %s" 
-                      % user.name)
-    
-    # Cycle through and create an array of mysql data
-    mysqlData = []
-    
-    for day in schedule.shifts:
-        mysqlData.append((day.startDate, day.shift, user.name, user.role))
-    
+    for i in t:
+        print(i)
+
     # Upload the new schedule
-    query = ("INSERT INTO calendar_schedules (date, shift, user, role) "
-             "VALUES (%s, %s, %s, %s)")
+    for s in schedule:
+        upload = Shift(
+            user=user,
+            date=s.start_datetime.date(),
+            shift_code=s.django_shift,
+            text_shift_code=s.shift_code
+        )
 
-    try:
-        cursor.executemany(query, mysqlData)
-    except:
-        log.exception("Unable to upload new schedule to database for %s" 
-                      % user.name)
+        upload.save()

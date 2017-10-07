@@ -22,30 +22,6 @@ class User(object):
         self.index = 0
         self.start = start
 
-class ShiftCode(object):
-    """Holds the retrieved shift code details from MySQL database"""
-
-    def __init__(self, code, mStart, mDuration, tuStart, tuDuration, wStart, 
-                 wDuration, thStart, thDuration, fStart, fDuration, saStart, 
-                 saDuration, suStart, suDuration, stStart, stDuration):
-        self.code = code
-        self.mStart = mStart
-        self.mDuration = mDuration
-        self.tuStart = tuStart
-        self.tuDuration = tuDuration
-        self.wStart = wStart
-        self.wDuration = wDuration
-        self.thStart = thStart
-        self.thDuration = thDuration
-        self.fStart = fStart
-        self.fDuration = fDuration
-        self.saStart = saStart
-        self.saDuration = saDuration
-        self.suStart = suStart
-        self.suDuration = suDuration
-        self.stStart = stStart
-        self.stDuration = stDuration
-
 class RawShift(object):
     """Holds the details for a user's specified shift details"""
     
@@ -60,11 +36,12 @@ class RawShift(object):
 class FormattedShift(object):
     """Holds expanded details on a user's specified shift"""
 
-    def __init__(self, code, start_datetime, end_datetime, comment):
+    def __init__(self, code, start_datetime, end_datetime, comment, django):
         self.shift_code = code
         self.start_datetime = start_datetime
         self.end_datetime = end_datetime
         self.comment = comment
+        self.django_shift = django
 
     def __str__(self):
         return "{} ({} to {})".format(
@@ -427,7 +404,7 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, conf
         old_schedule = []
 
         for shift in shifts:
-            old_schedule.append(RawShift(shift.shift_code, shift.start_date, ""))
+            old_schedule.append(RawShift(shift.shift_code, shift.date, ""))
         
         return old_schedule
 
@@ -502,7 +479,7 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, conf
   
                     schedule.append(FormattedShift(
                         shift.shift_code, start_datetime, end_datetime, 
-                        shift.comment
+                        shift.comment, code
                     ))
                 else:
                     # Shift has no times - don't add to schedule and mark 
@@ -563,7 +540,7 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, conf
   
             schedule.append(FormattedShift(
                 shift.shift_code, start_datetime, end_datetime, 
-                shift.comment
+                shift.comment, None
             ))
 
     
