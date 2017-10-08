@@ -74,6 +74,12 @@ def collect_config(config):
     )
 
     return {
+        "excel": {
+            "schedule_loc": config.get("schedules", "save_location"),
+            "ext_a": config.get("schedules", "type_a"),
+            "ext_p": config.get("schedules", "type_p"),
+            "ext_t": config.get("schedules", "type_t")
+        },
         "a_excel": {
             "sheet": config.get("schedules", "sheet_a"),
             "name_row": config.getint("schedules", "name_row_a"),
@@ -161,7 +167,7 @@ app_config = collect_config(config)
 
 # Collect the Excel schedule files
 log.info("Retrieve the Excel Schedules")
-excel_files = retrieve.retrieve_schedules(config)
+excel_files = retrieve.retrieve_schedules(config["excel"])
 
 # Collect a list of all the user names
 log.info("Retrieving all calendar users")
