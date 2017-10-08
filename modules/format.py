@@ -9,19 +9,6 @@ import xlrd
 log = logging.getLogger(__name__)
 
 # CLASSES
-class User(object):
-    """Holds retrieved user data from the MySQL database"""
-
-    def __init__(self, name, email, codeName, full, role, public, start):
-        self.name = name
-        self.email = email
-        self.codeName = codeName
-        self.fullDay = True if full == 1 else False
-        self.role = role
-        self.public = True if public == 1 else False
-        self.index = 0
-        self.start = start
-
 class RawShift(object):
     """Holds the details for a user's specified shift details"""
     
@@ -102,7 +89,7 @@ def get_formatted_date(date):
     
     year = date.strftime("%Y")
     
-    return ("%s-%s-%s" % (year, month, day))
+    return ("{}-{}-{}".format(year, month, day))
 
 def generate_calendar(user, schedule, root):
     """Generates an .ics file from the extracted user schedule"""
@@ -144,22 +131,39 @@ def generate_calendar(user, schedule, root):
     i = 0
 
     for shift in schedule:
-        start_date = shift.start_datetime.strftime("%Y%m%d")
-        comment = shift.comment
+        try:
+            start_date = shift.start_datetime.strftime("%Y%m%d")
+            comment = shift.comment
+        except Exception as e:
+            log.warn("Unable to extract shift data to generate calendar")
+            start_date = "20010101"
+            comment = ""
 
         lines.append("BEGIN:VEVENT")
 
-        if user.full_day == False:	
-            start_time = str(shift.start_datetime.time()).replace(":", "").zfill(6)
-            end_date = shift.end_datetime.strftime("%Y%m%d")
-            end_time = str(shift.end_datetime.time()).replace(":", "").zfill(6)
+        if user.full_day == False:
+            try:
+                start_time = str(shift.start_datetime.time()).replace(":", "").zfill(6)
+                end_date = shift.end_datetime.strftime("%Y%m%d")
+                end_time = str(shift.end_datetime.time()).replace(":", "").zfill(6)
+            except Exception as e:
+                log.warn("Unable to generate shift times for calendar")
+                start_time = "000000"
+                end_date = "20010102"
+                endtime = "000000"
 
             lines.append("DTSTART;TZID=America/Edmonton:%sT%s" % (start_date, start_time))
             lines.append("DTEND;TZID=America/Edmonton:%sT%s" % (end_date, end_time))
         elif user.full_day == True:
             start_time = "000000"
-            end_date = shift.start_datetime.date() + timedelta(days=1)
-            end_date = end_date.strftime("%Y%m%d")
+
+            try:
+                end_date = shift.start_datetime.date() + timedelta(days=1)
+                end_date = end_date.strftime("%Y%m%d")
+            except Exception as e:
+                log.warn("Unable to generate full day shift for schedule")
+                end_date = "20010102"
+                endtime = "000000"
 
             lines.append("DTSTART;VALUE=DATE:%s" % start_date)
             lines.append("DTEND;VALUE=DATE:%s" % end_date)
@@ -278,7 +282,7 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
                 comment = str(comment)
                 comment = comment.replace("\n", " ")
                 comment = comment.strip()
-        except:
+        except Exception as e:
             log.debug("Unable to extract comments from worksheet")
             comment = ""
         
@@ -330,8 +334,15 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
 
     def collect_stat_holidays(schedule, StatHoliday):
         """Collects all stat holidays needed to generate a schedule"""
-        first_day = schedule[0].start_date
-        last_day = schedule[-1].start_date
+        try:
+            first_day = schedule[0].start_date
+            last_day = schedule[-1].start_date
+        except Exception as e:
+            log.warn(
+                "Unable to retrieve statutory holidys based on schedule dates"
+            )
+            first_day = datetime(2001, 1, 1)
+            last_day = datetime(2020, 12, 31)
 
         stat_holidays = StatHoliday.objects.all().filter(
             Q(date__gte=first_day) & Q(date__lte=last_day)
@@ -381,6 +392,7 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
         return old_schedule
 
     def group_schedule_by_date(schedule):
+        """Groups schedule shifts by date"""
         groupings = {}
 
         for shift in schedule:
@@ -413,7 +425,6 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
     
     # Get all the stat holidays for the date range of the raw_schedule
     stat_holidays = collect_stat_holidays(raw_schedule, StatHoliday)
-
     
     # Assign start and end date/times to user's shifts
     schedule = []
@@ -423,9 +434,20 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
     for shift in raw_schedule:
         # Search for a shift match
         shift_match = False
-            
-        dow = shift.start_date.weekday()
-        stat_match = is_stat(stat_holidays, shift.start_date)
+        
+        # Record the day of the week
+        try:
+            dow = shift.start_date.weekday()
+        except Exception as e:
+            log.warn("Unable to determine day of week")
+            dow = 0
+
+        # Check if this is a stat holiday
+        try:
+            stat_match = is_stat(stat_holidays, shift.start_date)
+        except Exception as e:
+            log.warn("Unable to determine if this is a stat holiday")
+            stat_match = False
 
         for code in shift_code_list:
 	        # If matched, find the proper day to base shift details on
@@ -641,10 +663,12 @@ def return_column_index(sheet, user, name_row, col_start, col_end):
                 index = i
                 break
         except IndexError:
+            # Expected error if loop exceeds Excel content
             break
-        except Exception:
-            log.exception("Error while searcing for column index for %s" 
-                          % user.name)
+        except Exception as e:
+            log.critical(
+                "Error while searching for column index for {}".format(user.name)
+            )
 
     return index
 
@@ -657,11 +681,21 @@ def assemble_schedule(app_config, excel_files, user, ShiftCode, StatHoliday, Shi
 
     # Open the proper Excel worksheet
     if user.role == "p":
-        excel_book = openpyxl.load_workbook(file_loc)
-        excel_sheet = excel_book[config["sheet"]]
+        try:
+            excel_book = openpyxl.load_workbook(file_loc)
+            excel_sheet = excel_book[config["sheet"]]
+        except Exception as e:
+            log.critical(
+                "Unable to open .xlsx file for user role {}".format(user.role)
+            )
     elif user.role == "a" or user.role == "t":
-        excel_book = xlrd.open_workbook(file_loc)
-        excel_sheet = excel_book.sheet_by_name(config["sheet"])
+        try:
+            excel_book = xlrd.open_workbook(file_loc)
+            excel_sheet = excel_book.sheet_by_name(config["sheet"])
+        except Exception as e:
+            log.critical(
+                "Unable to open .xls file for user role{}".format(user.role)
+            )
 
     # Find column index for this user
     user_index = return_column_index(
@@ -680,10 +714,9 @@ def assemble_schedule(app_config, excel_files, user, ShiftCode, StatHoliday, Shi
         )
 
         return formatted_schedule
-
     else:
         log.warn(
-            "Unable to find {0} (role = {1}) in the Excel schedule".format(
+            "Unable to find {} (role = {}) in the Excel schedule".format(
                 user.name,
                 user.role
             )

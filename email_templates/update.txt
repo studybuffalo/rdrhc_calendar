@@ -1,25 +1,25 @@
 Hello {{ user_name }},
 
-Please see the following details regarding your work schedule at the Red Deer Regional Hospital Centre:
-
-{% block additions %}ADDITIONS
+Please see the following details regarding your work schedule at the Red Deer Regional Hospital Centre
+{% block additions %}
+ADDITIONS
 ------------------------------------
 {{ additions }}{% block additions %}
-
-{% block deletions %}DELETIONS
+{% block deletions %}
+DELETIONS
 ------------------------------------
 {{ deletions }}{% block deletions %}
-
-{% block changes %}CHANGES
+{% block changes %}
+CHANGES
 ------------------------------------
 {{ changes }}{% block changes %}
-
-{% block missing %}MISSING SHIFT CODES
+{% block missing %}
+MISSING SHIFT CODES
 ------------------------------------
 A default shift time of {{ weekday_start }} to {{ weekday_end}} (weekdays), {{ weekend_start }} to {{ weekend_end }} (weekends), or {{ stat_start }} to {{ stat_end }} (statutory holidays) has been used for these shifts.
 {{ missing }}{% block missing %}
-
-{% block excluded %}EXCLUDED CODES
+{% block excluded %}
+EXCLUDED CODES
 ------------------------------------
 These codes are for you to review to ensure no work shifts have been missed; these codes have interpretted either as holidays/vacations/sick time/etc. or as being unrelated to start and end times.
 {{ excluded }}{% block excluded %}
