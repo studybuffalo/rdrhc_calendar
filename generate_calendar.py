@@ -127,8 +127,7 @@ def collect_config(config):
         "calendar_save_location": config.get("calendar", "save_location"),
         "email": {
             "server": config.get("email", "server"),
-            "user": config.get("email", "user"),
-            "password": config.get("email", "password"),
+            "from_name": config.get("email", "from_name"),
             "from_email": config.get("email", "from_email"),
             "welcome_text": config.get("email", "welcome_text", raw=True),
             "welcome_html": config.get("email", "welcome_html", raw=True),
