@@ -177,6 +177,7 @@ users = CalendarUser.objects.all()
 for user in users:
     # Assemble the users schedule
     log.info("Assembling schedule for {0}".format(user.name))
+
     schedule = format.assemble_schedule(app_config, excel_files, user, ShiftCode, StatHoliday, Shift)
 
     if schedule:

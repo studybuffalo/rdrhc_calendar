@@ -130,6 +130,8 @@ def generate_calendar(user, schedule, cal_loc):
 
     i = 0
 
+    log.debug("Cycling through shifts for {}".format(user.name))
+
     for shift in schedule:
         try:
             start_date = shift.start_datetime.strftime("%Y%m%d")
@@ -187,6 +189,8 @@ def generate_calendar(user, schedule, cal_loc):
     lines.append("END:VCALENDAR")
 
     # Fold any lines > 75 characters long
+    log.debug("Folding lines greater than 75 characters long")
+
     folded = []
     
     for line in lines:
@@ -216,8 +220,10 @@ def generate_calendar(user, schedule, cal_loc):
 
     # Cycle through schedule list and generate .ics file
     calendar_name = user.calendar_name
-    cal_title = "%s.ics" % calendar_name
+    cal_title = "{}.ics".format(calendar_name)
     file_loc = Path(cal_loc, cal_title)
+
+    log.debug("Saving calendar to {}".format(file_loc))
 
     with open(file_loc, "w") as ics:
         for line in folded:
@@ -234,6 +240,8 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
         comment_map = sheet.cell_note_map
 
     # Cycle through each row and extract shift date, code, and comments
+    log.debug("Cycling through rows of excel schedule")
+
     shifts = []
 
     for i in range(row_start, row_end):
@@ -300,6 +308,8 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
     
     # Sort the shifts by date
     # Note: should occur automatically, but just in case
+    log.debug("Sorting shifts by date")
+
     sorted_shifts = sorted(shifts, key=lambda s: s.start_date)
 
     return sorted_shifts
@@ -309,6 +319,8 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
     
     def collect_shift_codes(user, ShiftCode):
         """Takes a specific user and extracts the shift times"""
+        log.debug("Collecting all the required shift codes for user")
+
         # Collect the user-specific codes
         user_codes = ShiftCode.objects.filter(
             Q(role=user.role) & Q(user__exact=user.id)
@@ -320,6 +332,8 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
         )
 
         # Add all the user_codes into the codes list
+        log.debug("Combining user-specific and default shift codes")
+
         codes = []
         
         for u_code in user_codes:
@@ -650,6 +664,8 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
 
 def return_column_index(sheet, user, name_row, col_start, col_end):
     """Determines the Excel column containing the provided user"""
+    log.debug("Looking for user index in Excel schedule")
+
     index = None
 
     for i in range(col_start, col_end):
@@ -680,6 +696,8 @@ def assemble_schedule(app_config, excel_files, user, ShiftCode, StatHoliday, Shi
     config = app_config["{}_excel".format(user.role).lower()]
 
     # Open the proper Excel worksheet
+    log.debug("Opening the Excel worksheet")
+
     if user.role == "p":
         try:
             excel_book = openpyxl.load_workbook(file_loc)

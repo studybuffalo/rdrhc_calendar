@@ -14,6 +14,8 @@ def email_welcome(user, config):
 
     # Check if user needs email sent (signed up in past 24 hours)
     if user.first_email_sent == False:
+        log.debug("Processing data to send user a welcome email")
+
         from_name = config["email"]["from_name"]
         from_email = config["email"]["from_email"]
         from_address = formataddr((from_name, from_email))
@@ -68,6 +70,11 @@ def email_welcome(user, config):
                 server.starttls()
                 server.sendmail(from_address, to_address, content.as_string())
                 server.quit()
+
+            # Update user profile to mark first_email_sent as true
+            user.first_email_sent = True
+            user.update()
+
         except:
             log.exception("Unable to send welcome email to %s" % user.name)
 
@@ -76,8 +83,11 @@ def email_schedule(user, config, schedule):
 
     if (len(schedule.additions) or len(schedule.deletions) or 
         len(schedule.changes) or len(schedule.missing) or len(schedule.null)):
-        
+        log.debug("User qualifies for an update email to be sent")
+
         # Opens the update email (text) file
+        log.debug("Opening the email templates")
+
         text_loc = config["email"]["update_text"]
         
         try:
@@ -110,6 +120,8 @@ def email_schedule(user, config, schedule):
         html = html.replace("{{ user_name }}", user.name)
 
         # Manage added shifts
+        log.debug("Updating the 'additions' section")
+
         if len(schedule.additions):
             # Cycle through additions and insert into templates
             additions_text = []
@@ -133,6 +145,8 @@ def email_schedule(user, config, schedule):
             html = re.sub(regex, "", html, flags=re.S)
 
         # Manage deleted shifts
+        log.debug("Updating the 'deletions' section")
+
         if len(schedule.deletions):
             deletions_text = []
             deletions_html = []
@@ -155,6 +169,8 @@ def email_schedule(user, config, schedule):
             html = re.sub(regex, "", html, flags=re.S)
 
         # Manage changed shifts
+        log.debug("Updating the 'changes' section")
+
         if len(schedule.changes):
             changes_text = []
             changes_html = []
@@ -177,6 +193,8 @@ def email_schedule(user, config, schedule):
             html = re.sub(regex, "", html, flags=re.S)
 
         # Manage missing shifts
+        log.debug("Updating the 'missing' section")
+
         if len(schedule.missing):
             defaults = config["calendar_defaults"]
 
@@ -225,6 +243,8 @@ def email_schedule(user, config, schedule):
             html = re.sub(regex, "", html, flags=re.S)
 
         # Manage excluded shifts
+        log.debug("Updating the 'excluded' section")
+
         if len(schedule.null):
             null_text = []
             null_html = []
@@ -253,6 +273,8 @@ def email_schedule(user, config, schedule):
 
         
         # Setup email settings
+        log.debug("Setting up the other email settings")
+
         from_name = config["email"]["from_name"]
         from_email = config["email"]["from_email"]
         from_address = formataddr((from_name, from_email))

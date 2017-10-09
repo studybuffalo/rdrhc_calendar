@@ -7,6 +7,8 @@ def update_db(user, schedule, Shift):
     """Uploads user schedule to Django Database"""
 
     # Remove the user's old schedule
+    log.debug("Removing old shifts for user")
+
     try:
         Shift.objects.filter(user__exact=user.id).delete()
     except Exception as e:
@@ -15,6 +17,8 @@ def update_db(user, schedule, Shift):
         )
 
     # Upload the new schedule
+    log.debug("Uploading the new shifts for user")
+
     for s in schedule:
         upload = Shift(
             user=user,

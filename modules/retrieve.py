@@ -16,6 +16,8 @@ def get_date():
     return date
 
 def retrieve_schedules(config):
+    log.debug("Retrieving location of schedules from app_config")
+
     schedule_loc = config["schedule_loc"]
 
     date = get_date()
