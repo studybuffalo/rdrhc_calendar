@@ -254,13 +254,19 @@ def email_schedule(user, config, schedule):
 
         
         # Setup email settings
-        fromEmail = config["email"]["from_email"]
-        toEmail = user.email
+        from_name = config["email"]["from_name"]
+        from_email = config["email"]["from_email"]
+        from_address = formataddr((from_name, from_email))
+
+        to_name = user.name
+        to_email = user.email
+        to_address = formataddr((to_name, to_email))
+
         subject = "RDRHC Schedule Changes"
         
         content = MIMEMultipart('alternative')
-        content['From'] = fromEmail
-        content['To'] = toEmail
+        content['From'] = from_address
+        content['To'] = to_address
         content['Subject'] = subject
         
         # Construct the email body
@@ -284,7 +290,7 @@ def email_schedule(user, config, schedule):
                 server.ehlo()
                 server.starttls()
                 server.login(login, pw)
-                server.sendmail(fromEmail, toEmail, content.as_string())
+                server.sendmail(from_address, to_address, content.as_string())
                 server.quit()
         except:
             log.exception("Unable to send update email to %s" % user.name)
