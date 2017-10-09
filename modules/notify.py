@@ -148,7 +148,6 @@ def email_schedule(user, config, schedule):
             text = text.replace("{% block deletions %}", "")
             html = html.replace("{% block deletions %}", "")
         else:
-            log.debug("No deletions present - remove section")
             # No deletions, remove entire section
             regex = r"{% block deletions %}.*{% block deletions %}"
 
