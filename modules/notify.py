@@ -73,7 +73,7 @@ def email_welcome(user, config):
 
             # Update user profile to mark first_email_sent as true
             user.first_email_sent = True
-            user.update()
+            user.save()
 
         except:
             log.exception("Unable to send welcome email to %s" % user.name)
