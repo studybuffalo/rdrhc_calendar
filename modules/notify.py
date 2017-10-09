@@ -283,13 +283,9 @@ def email_schedule(user, config, schedule):
             else:
                 log.info("Sending update email to %s" % user.name)
 
-                login = config["email"]["user"]
-                pw = config["email"]["password"]
-
                 server = smtplib.SMTP(config["email"]["server"])
                 server.ehlo()
                 server.starttls()
-                server.login(login, pw)
                 server.sendmail(from_address, to_address, content.as_string())
                 server.quit()
         except:
