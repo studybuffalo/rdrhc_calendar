@@ -189,27 +189,27 @@ def email_schedule(user, config, schedule):
 
             weekday_start = defaults["weekday_start"].strftime("%H:%M")
             text = text.replace("{{ weekday_start }}", weekday_start)
-            html = html.replace(" {{ weekday_start }}", weekday_start)
+            html = html.replace("{{ weekday_start }}", weekday_start)
 
             weekday_end = defaults["weekday_end"].strftime("%H:%M")
             text = text.replace("{{ weekday_end }}", weekday_end)
-            html = html.replace(" {{ weekday_end }}", weekday_end)
+            html = html.replace("{{ weekday_end }}", weekday_end)
 
             weekend_start = defaults["weekend_start"].strftime("%H:%M")
             text = text.replace("{{ weekend_start }}", weekend_start)
-            html = html.replace(" {{ weekend_start }}", weekend_start)
+            html = html.replace("{{ weekend_start }}", weekend_start)
 
             weekend_end = defaults["weekend_end"].strftime("%H:%M")
             text = text.replace("{{ weekend_end }}", weekend_end)
-            html = html.replace(" {{ weekend_end }}", weekend_end)
+            html = html.replace("{{ weekend_end }}", weekend_end)
 
             stat_start = defaults["stat_start"].strftime("%H:%M")
             text = text.replace("{{ stat_start }}", stat_start)
-            html = html.replace(" {{ stat_start }}", stat_start)
+            html = html.replace("{{ stat_start }}", stat_start)
 
             stat_end = defaults["stat_end"].strftime("%H:%M")
             text = text.replace("{{ stat_end }}", stat_end)
-            html = html.replace(" {{ stat_end }}", stat_end)
+            html = html.replace("{{ stat_end }}", stat_end)
 
             missing_text = []
             missing_html = []
