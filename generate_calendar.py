@@ -124,6 +124,7 @@ def collect_config(config):
             "stat_hours": weekday_hours,
             "stat_minutes": weekday_minutes,
         },
+        "calendar_save_location": config.get("calendar", "save_location"),
         "email": {
             "server": config.get("email", "server"),
             "user": config.get("email", "user"),
@@ -184,7 +185,9 @@ for user in users:
         upload.update_db(user, schedule.shifts, Shift)
 
         # Generate and the iCal file to the Django server
-        format.generate_calendar(user, schedule.shifts, root)
+        format.generate_calendar(
+            user, schedule.shifts, app_config["calendar_save_location"]
+        )
 
         # If this is the first schedule, email the welcome details
         notify.email_welcome(user, app_config)

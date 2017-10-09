@@ -91,7 +91,7 @@ def get_formatted_date(date):
     
     return ("{}-{}-{}".format(year, month, day))
 
-def generate_calendar(user, schedule, root):
+def generate_calendar(user, schedule, cal_loc):
     """Generates an .ics file from the extracted user schedule"""
     
     log.info("Generating .ics calendar for %s" % user.name)
@@ -123,7 +123,6 @@ def generate_calendar(user, schedule, root):
     lines.append("RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU")
     lines.append("END:STANDARD")
     lines.append("END:VTIMEZONE")
-    
     
 	# Cycle through schedule and generate schedule events
     dt_stamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
@@ -215,9 +214,9 @@ def generate_calendar(user, schedule, root):
             folded.append(line + "\n")
 
     # Cycle through schedule list and generate .ics file
-    file_name = user.calendar_name
-    sched_title = "%s.ics" % file_name
-    file_loc = root.child("calendars", sched_title).absolute()
+    calendar_name = user.calendar_name
+    cal_title = "%s.ics" % calendar_name
+    file_loc = Path(cal_loc, cal_title)
 
     with open(file_loc, "w") as ics:
         for line in folded:
