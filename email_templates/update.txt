@@ -29,3 +29,7 @@ The address for your schedule is: http://www.studybuffalo.com/calendar/{{ calend
 For help using the calendar file, please see the tutorials located at: http://www.studybuffalo.com/calendar/
 
 If you wish to have any modifications made to your shift codes (including exlcuded or missing shift codes), please contact the owner of this program.
+
+------------------------------------
+
+If you would no longer like to receive email updates, you may unbscribe by visiting https://www.studybuffalo.ca/unsubscribe/
