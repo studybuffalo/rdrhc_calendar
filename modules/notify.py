@@ -56,12 +56,12 @@ def email_welcome(user, config):
             else:
                 log.info("Sending welcome email to %s" % user.name)
                 server = smtplib.SMTP(config["email"]["server"])
-                login = config["email"]["user"]
-                pw = config["email"]["password"]
+                # login = config["email"]["user"]
+                #pw = config["email"]["password"]
 
                 server.ehlo()
                 server.starttls()
-                server.login(login, pw)
+                # server.login(login, pw)
                 server.sendmail(fromEmail, toEmail, content.as_string())
                 server.quit()
         except:
@@ -69,16 +69,6 @@ def email_welcome(user, config):
 
 def email_schedule(user, config, schedule):
     """Emails user with any schedule changes"""
-    """
-    text_loc = config["email"]["update_text"]
-        
-    with open(text_loc, "r") as textFile:
-        text = textFile.read().replace("\n", "\r\n")
-    
-    regex = r"{% block additions %}.*{% block additions %}"
-    
-    text = re.sub(regex, "", text, flags=re.S)
-    """
 
     if (len(schedule.additions) or len(schedule.deletions) or 
         len(schedule.changes) or len(schedule.missing) or len(schedule.null)):
