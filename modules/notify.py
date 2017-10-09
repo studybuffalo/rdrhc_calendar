@@ -69,6 +69,16 @@ def email_welcome(user, config):
 
 def email_schedule(user, config, schedule):
     """Emails user with any schedule changes"""
+    """
+    text_loc = config["email"]["update_text"]
+        
+    with open(text_loc, "r") as textFile:
+        text = textFile.read().replace("\n", "\r\n")
+    
+    regex = r"{% block additions %}.*{% block additions %}"
+    
+    text = re.sub(regex, "", text, flags=re.S)
+    """
 
     if (len(schedule.additions) or len(schedule.deletions) or 
         len(schedule.changes) or len(schedule.missing) or len(schedule.null)):
@@ -77,20 +87,34 @@ def email_schedule(user, config, schedule):
         text_loc = config["email"]["update_text"]
         
         try:
-            with open(textLoc, "r") as textFile:
+            with open(text_loc, "r") as textFile:
                 text = textFile.read().replace("\n", "\r\n")
         except Exception as e:
-            log.exception("Unable to read welcome email text template")
+            log.exception(
+                "Unable to read welcome email text template at {}".format(
+                    text_loc
+                )
+            )
+            text = None
 
         # Opens the update email (html) file
-        text_loc = config["email"]["update_text"]
+        html_loc = config["email"]["update_html"]
         
         try:
-            with open(htmlLoc, "r") as htmlFile:
+            with open(html_loc, "r") as htmlFile:
                 html = htmlFile.read()
         except Exception as e:
-            log.exception("Unable to read welcome email html template")
+            log.exception(
+                "Unable to read welcome email html template at {}".format(
+                    html_loc
+                )
+            )
+            html = None
         
+        # Set the user name
+        text = text.replace("{{ user_name }}", user.name)
+        html = html.replace("{{ user_name }}", user.name)
+
         # Manage added shifts
         if len(schedule.additions):
             # Cycle through additions and insert into templates
@@ -98,7 +122,7 @@ def email_schedule(user, config, schedule):
             additions_html = []
 
             for a in schedule.additions:
-                additions_text.append(" - {}".format_map(a.msg))
+                additions_text.append(" - {}".format(a.msg))
                 additions_html.append("<li>{}</li>".format(a.msg))
 
             text = text.replace("{{ additions }}", "\r\n".join(additions_text))
@@ -120,21 +144,22 @@ def email_schedule(user, config, schedule):
             deletions_html = []
 
             for d in schedule.deletions:
-                deletions_text.append(" - {}".format_map(d.msg))
+                deletions_text.append(" - {}".format(d.msg))
                 deletions_html.append("<li>{}</li>".format(d.msg))
                 
-            text.replace("{{ deletions }}", "\r\n".join(deletions_text))
-            html.replace("{{ deletions }}", "".join(deledtions_html))
+            text = text.replace("{{ deletions }}", "\r\n".join(deletions_text))
+            html = html.replace("{{ deletions }}", "".join(deletions_html))
 
             # Remove the block markers
             text = text.replace("{% block deletions %}", "")
             html = html.replace("{% block deletions %}", "")
         else:
+            log.debug("No deletions present - remove section")
             # No deletions, remove entire section
             regex = r"{% block deletions %}.*{% block deletions %}"
-            
-            text = re.sub(regex, "", text, re.S)
-            html = re.sub(regex, "", html, re.S)
+
+            text = re.sub(regex, "", text, flags=re.S)
+            html = re.sub(regex, "", html, flags=re.S)
 
         # Manage changed shifts
         if len(schedule.changes):
@@ -142,11 +167,11 @@ def email_schedule(user, config, schedule):
             changes_html = []
 
             for c in schedule.changes:
-                changes_text.append(" - {}".format_map(c.msg))
+                changes_text.append(" - {}".format(c.msg))
                 changes_html.append("<li>{}</li>".format(c.msg))
                 
-            text.replace("{{ deletions }}", "\r\n".join(changes_text))
-            html.replace("{{ deletions }}", "".join(changes_html))
+            text = text.replace("{{ changes }}", "\r\n".join(changes_text))
+            html = html.replace("{{ changes }}", "".join(changes_html))
 
             # Remove the block markers
             text = text.replace("{% block changes %}", "")
@@ -155,8 +180,8 @@ def email_schedule(user, config, schedule):
             # No changes, remove entire section
             regex = r"{% block changes %}.*{% block changes %}"
             
-            text = re.sub(regex, "", text, re.S)
-            html = re.sub(regex, "", html, re.S)
+            text = re.sub(regex, "", text, flags=re.S)
+            html = re.sub(regex, "", html, flags=re.S)
 
         # Manage missing shifts
         if len(schedule.missing):
@@ -168,7 +193,7 @@ def email_schedule(user, config, schedule):
 
             weekday_end = defaults["weekday_end"].strftime("%H:%M")
             text = text.replace("{{ weekday_end }}", weekday_end)
-            html = html.replace(" {{ weekday_end}}", weekday_end)
+            html = html.replace(" {{ weekday_end }}", weekday_end)
 
             weekend_start = defaults["weekend_start"].strftime("%H:%M")
             text = text.replace("{{ weekend_start }}", weekend_start)
@@ -176,7 +201,7 @@ def email_schedule(user, config, schedule):
 
             weekend_end = defaults["weekend_end"].strftime("%H:%M")
             text = text.replace("{{ weekend_end }}", weekend_end)
-            html = html.replace(" {{ weekend_end}}", weekend_end)
+            html = html.replace(" {{ weekend_end }}", weekend_end)
 
             stat_start = defaults["stat_start"].strftime("%H:%M")
             text = text.replace("{{ stat_start }}", stat_start)
@@ -184,17 +209,17 @@ def email_schedule(user, config, schedule):
 
             stat_end = defaults["stat_end"].strftime("%H:%M")
             text = text.replace("{{ stat_end }}", stat_end)
-            html = html.replace(" {{ stat_end}}", stat_end)
+            html = html.replace(" {{ stat_end }}", stat_end)
 
             missing_text = []
             missing_html = []
 
             for m in schedule.missing:
-                missing_text.append(" - {}".format_map(m.msg))
+                missing_text.append(" - {}".format(m.msg))
                 missing_html.append("<li>{}</li>".format(m.msg))
                 
-            text.replace("{{ missing }}", "\r\n".join(missing_text))
-            html.replace("{{ missing }}", "".join(missing_html))
+            text = text.replace("{{ missing }}", "\r\n".join(missing_text))
+            html = html.replace("{{ missing }}", "".join(missing_html))
 
             # Remove the block markers
             text = text.replace("{% block missing %}", "")
@@ -203,8 +228,8 @@ def email_schedule(user, config, schedule):
             # No missing shifts, remove entire section
             regex = r"{% block missing %}.*{% block missing %}"
             
-            text = re.sub(regex, "", text, re.S)
-            html = re.sub(regex, "", html, re.S)
+            text = re.sub(regex, "", text, flags=re.S)
+            html = re.sub(regex, "", html, flags=re.S)
 
         # Manage excluded shifts
         if len(schedule.null):
@@ -212,11 +237,11 @@ def email_schedule(user, config, schedule):
             null_html = []
 
             for n in schedule.null:
-                null_text.append(" - {}".format_map(n.msg))
+                null_text.append(" - {}".format(n.msg))
                 null_html.append("<li>{}</li>".format(n.msg))
                 
-            text.replace("{{ excluded }}", "\r\n".join(null_text))
-            html.replace("{{ excluded }}", "".join(null_html))
+            text = text.replace("{{ excluded }}", "\r\n".join(null_text))
+            html = html.replace("{{ excluded }}", "".join(null_html))
 
             # Remove the block markers
             text = text.replace("{% block excluded %}", "")
@@ -225,8 +250,8 @@ def email_schedule(user, config, schedule):
             # No excluded shifts, remove entire section
             regex = r"{% block excluded %}.*{% block excluded %}"
             
-            text = re.sub(regex, "", text, re.S)
-            html = re.sub(regex, "", html, re.S)
+            text = re.sub(regex, "", text, flags=re.S)
+            html = re.sub(regex, "", html, flags=re.S)
 
         # Add the calendar name
         calendar_name = user.calendar_name

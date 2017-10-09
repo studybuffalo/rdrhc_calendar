@@ -167,7 +167,7 @@ app_config = collect_config(config)
 
 # Collect the Excel schedule files
 log.info("Retrieve the Excel Schedules")
-excel_files = retrieve.retrieve_schedules(config["excel"])
+excel_files = retrieve.retrieve_schedules(app_config["excel"])
 
 # Collect a list of all the user names
 log.info("Retrieving all calendar users")
