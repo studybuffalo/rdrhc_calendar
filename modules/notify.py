@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formataddr
 import logging
 import re
 import smtplib
@@ -13,13 +14,19 @@ def email_welcome(user, config):
 
     # Check if user needs email sent (signed up in past 24 hours)
     if user.first_email_sent == False:
-        fromEmail = config["email"]["from_email"]
-        toEmail = user.email
+        from_name = config["email"]["from_name"]
+        from_email = config["email"]["from_email"]
+        from_address = formataddr((from_name, from_email))
+
+        to_name = user.name
+        to_email = user.email
+        to_address = formataddr((to_name, to_email))
+
         subject = "Welcome to Your New Online Schedule"
 
         content = MIMEMultipart('alternative')
-        content['From'] = fromEmail
-        content['To'] = toEmail
+        content['From'] = from_address
+        content['To'] = to_address
         content['Subject'] = subject
 
         # Collects text welcome email from template file
@@ -56,13 +63,10 @@ def email_welcome(user, config):
             else:
                 log.info("Sending welcome email to %s" % user.name)
                 server = smtplib.SMTP(config["email"]["server"])
-                # login = config["email"]["user"]
-                #pw = config["email"]["password"]
 
                 server.ehlo()
                 server.starttls()
-                # server.login(login, pw)
-                server.sendmail(fromEmail, toEmail, content.as_string())
+                server.sendmail(from_address, to_address, content.as_string())
                 server.quit()
         except:
             log.exception("Unable to send welcome email to %s" % user.name)
