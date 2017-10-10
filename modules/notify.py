@@ -30,7 +30,9 @@ def email_welcome(user, config):
         content['From'] = from_address
         content['To'] = to_address
         content['Subject'] = subject
-        content["List-Unsubscribe"] = config["email"]["unsubscribe_link"]
+        content["List-Unsubscribe"] = "<{}>".format(
+            config["email"]["unsubscribe_link"]
+        )
 
         # Collects text welcome email from template file
         textLoc = config["email"]["welcome_text"]
@@ -290,7 +292,10 @@ def email_schedule(user, config, schedule):
         content['From'] = from_address
         content['To'] = to_address
         content['Subject'] = subject
-        
+        content["List-Unsubscribe"] = "<{}>".format(
+            config["email"]["unsubscribe_link"]
+        )
+
         # Construct the email body
         textBody = MIMEText(text, 'plain')
         htmlBody = MIMEText(html, 'html')
