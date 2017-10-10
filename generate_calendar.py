@@ -133,6 +133,7 @@ def collect_config(config):
             "welcome_html": config.get("email", "welcome_html", raw=True),
             "update_text": config.get("email", "update_text", raw=True),
             "update_html": config.get("email", "update_html", raw=True),
+            "unsubscribe_link": config.get("email", "unsubscribe_link")
         },
         "debug": {
             "email_console": config.getboolean("debug", "email_console")

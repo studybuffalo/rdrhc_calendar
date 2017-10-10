@@ -30,6 +30,7 @@ def email_welcome(user, config):
         content['From'] = from_address
         content['To'] = to_address
         content['Subject'] = subject
+        content["List-Unsubscribe"] = config["email"]["unsubscribe_link"]
 
         # Collects text welcome email from template file
         textLoc = config["email"]["welcome_text"]
