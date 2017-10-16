@@ -180,6 +180,24 @@ def generate_calendar(user, schedule, cal_loc):
         lines.append("STATUS:CONFIRMED")
         lines.append("SUMMARY:%s Shift" % shift.shift_code)
         lines.append("TRANSP:TRANSPARENT")
+
+        if user.reminder > 0:
+            try:
+                lines.append("BEGIN:VALARM")
+                lines.append("TRIGGER:-PT{}M".format(user.reminder))
+                lines.append("ACTION:DISPLAY")
+                lines.append("DESCRIPTION:{} shift starts in {} minutes".format(
+                    shift.shift_code, user.reminder
+                ))
+                lines.append("END:VALARM")
+            except Exception as e:
+                log.warn("Unable to set reminder for shift")
+
+                lines.append("BEGIN:VALARM")
+                lines.append("TRIGGER:-PT30M")
+                lines.append("ACTION:DISPLAY")
+                lines.append("DESCRIPTION:Shift starts in 30 minutes")
+                lines.append("END:VALARM")
         lines.append("END:VEVENT")
 
         i = i + 1
