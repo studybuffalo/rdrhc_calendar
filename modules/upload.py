@@ -10,7 +10,7 @@ def update_db(user, schedule, Shift):
     log.debug("Removing old shifts for user")
 
     try:
-        Shift.objects.filter(user__exact=user.id).delete()
+        Shift.objects.filter(sb_user=user.sb_user).delete()
     except Exception as e:
         log.warn(
             "Unable to remove old schedule for {}".format(user.name)
@@ -18,10 +18,10 @@ def update_db(user, schedule, Shift):
 
     # Upload the new schedule
     log.debug("Uploading the new shifts for user")
-
+    
     for s in schedule:
         upload = Shift(
-            user=user,
+            sb_user=user.sb_user,
             date=s.start_datetime.date(),
             shift_code=s.django_shift,
             text_shift_code=s.shift_code

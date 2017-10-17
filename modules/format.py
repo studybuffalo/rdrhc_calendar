@@ -353,12 +353,12 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
 
         # Collect the user-specific codes
         user_codes = ShiftCode.objects.filter(
-            Q(role=user.role) & Q(user__exact=user.id)
+            Q(role=user.role) & Q(sb_user=user.sb_user)
         )
 
         # Collect the default codes (i.e. no user)
         default_codes = ShiftCode.objects.filter(
-            Q(role=user.role) & Q(user__isnull=True)
+            Q(role=user.role) & Q(sb_user__isnull=True)
         )
 
         # Add all the user_codes into the codes list
@@ -406,7 +406,7 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
 
     def retrieve_old_schedule(user, Shift):
         """Retrieves the user's previous schedule from the database"""
-        shifts = Shift.objects.all().filter(user__exact=user.id).order_by("date")
+        shifts = Shift.objects.all().filter(sb_user=user.sb_user).order_by("date")
 
         old_schedule = {}
 

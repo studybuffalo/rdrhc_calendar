@@ -139,7 +139,19 @@ def collect_config(config):
             "email_console": config.getboolean("debug", "email_console")
         }
     }
+   
+def collect_emails(calendar, EmailAccounts):
+    """Retrieves a specified calendar user's email"""
+    emails = EmailAccounts.objects.filter(user=calendar.sb_user)
+
+    email_list = []
+
+    for e in emails:
+        print(e)
+        email_list.append(e.email)
     
+    return(email_list)
+
 # Set root for this program to allow absolute paths
 root = Path(sys.argv[1])
 
@@ -160,6 +172,7 @@ sys.path.append(djangoApp)
 application = get_wsgi_application()
 
 from rdrhc_calendar.models import CalendarUser, ShiftCode, StatHoliday, Shift
+from allauth.account.models import EmailAddress
 
 log.info("STARTING RDRHC CALENDAR GENERATOR")
 
@@ -190,10 +203,15 @@ for user in users:
             user, schedule.shifts, app_config["calendar_save_location"]
         )
 
+        # Get the user's email(s)
+        emails = collect_emails(user, EmailAddress)
+
         # If this is the first schedule, email the welcome details
-        notify.email_welcome(user, app_config)
+        notify.email_welcome(user, emails, app_config)
 
         # Email the user the calendar details
-        notify.email_schedule(user, app_config, schedule)
+        notify.email_schedule(user, emails, app_config, schedule)
 
 log.info("CALENDAR GENERATION COMPLETE")
+
+
