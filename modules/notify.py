@@ -14,73 +14,77 @@ def email_welcome(user, emails, config):
 
     # Check if user needs email sent (signed up in past 24 hours)
     if user.first_email_sent == False:
+        log.debug("Processing data to send user a welcome email")
+
+        from_name = config["email"]["from_name"]
+        from_email = config["email"]["from_email"]
+        from_address = formataddr((from_name, from_email))
+
+        to_addresses = []
+
         for email in emails:
-            log.debug("Processing data to send user a welcome email")
-
-            from_name = config["email"]["from_name"]
-            from_email = config["email"]["from_email"]
-            from_address = formataddr((from_name, from_email))
-
             to_name = user.name
             to_email = email
             to_address = formataddr((to_name, to_email))
 
-            subject = "Welcome to Your New Online Schedule"
+            to_addresses.append(to_address)
 
-            content = MIMEMultipart('alternative')
-            content['From'] = from_address
-            content['To'] = to_address
-            content['Subject'] = subject
-            content["List-Unsubscribe"] = "<{}>".format(
-                config["email"]["unsubscribe_link"]
-            )
+        subject = "Welcome to Your New Online Schedule"
 
-            # Collects text welcome email from template file
-            textLoc = config["email"]["welcome_text"]
+        content = MIMEMultipart('alternative')
+        content['From'] = from_address
+        content['To'] = ",".join(to_addresses)
+        content['Subject'] = subject
+        content["List-Unsubscribe"] = "<{}>".format(
+            config["email"]["unsubscribe_link"]
+        )
+
+        # Collects text welcome email from template file
+        textLoc = config["email"]["welcome_text"]
         
-            try:
-                with open(textLoc, "r") as textFile:
-                    text = textFile.read().replace("\n", "\r\n")
-            except:
-                log.exception("Unable to read welcome email text template")
-                return
+        try:
+            with open(textLoc, "r") as textFile:
+                text = textFile.read().replace("\n", "\r\n")
+        except:
+            log.exception("Unable to read welcome email text template")
+            return
 
-            # Collects html welcome email from template file
-            htmlLoc = config["email"]["welcome_html"]
+        # Collects html welcome email from template file
+        htmlLoc = config["email"]["welcome_html"]
             
-            try:
-                with open(htmlLoc, "r") as htmlFile:
-                    html = htmlFile.read()
-            except:
-                log.exception("Unable to read welcome email html template")
-                return
+        try:
+            with open(htmlLoc, "r") as htmlFile:
+                html = htmlFile.read()
+        except:
+            log.exception("Unable to read welcome email html template")
+            return
 
-            # Assemble an HTML and plain text version
-            textBody = MIMEText(text, 'plain')
-            htmlBody = MIMEText(html, 'html')
+        # Assemble an HTML and plain text version
+        textBody = MIMEText(text, 'plain')
+        htmlBody = MIMEText(html, 'html')
         
-            content.attach(textBody)
-            content.attach(htmlBody)
+        content.attach(textBody)
+        content.attach(htmlBody)
         
-            # Attempt to send email
-            try:
-                if config["debug"]["email_console"]:
-                    log.debug(content.as_string())
-                else:
-                    log.info("Sending welcome email to %s" % user.name)
-                    server = smtplib.SMTP(config["email"]["server"])
+        # Attempt to send email
+        try:
+            if config["debug"]["email_console"]:
+                log.debug(content.as_string())
+            else:
+                log.info("Sending welcome email to %s" % user.name)
+                server = smtplib.SMTP(config["email"]["server"])
 
-                    server.ehlo()
-                    server.starttls()
-                    server.sendmail(from_address, to_address, content.as_string())
-                    server.quit()
+                server.ehlo()
+                server.starttls()
+                server.sendmail(from_address, to_address, content.as_string())
+                server.quit()
 
-                # Update user profile to mark first_email_sent as true
-                user.first_email_sent = True
-                user.save()
+            # Update user profile to mark first_email_sent as true
+            user.first_email_sent = True
+            user.save()
 
-            except:
-                log.exception("Unable to send welcome email to %s" % user.name)
+        except:
+            log.exception("Unable to send welcome email to %s" % user.name)
 
 def email_schedule(user, emails, config, schedule):
     """Emails user with any schedule changes"""
@@ -277,46 +281,50 @@ def email_schedule(user, emails, config, schedule):
 
         
         # Setup email settings
+        log.debug("Setting up the other email settings")
+
+        from_name = config["email"]["from_name"]
+        from_email = config["email"]["from_email"]
+        from_address = formataddr((from_name, from_email))
+
+        # Create list of all of the user's emails
+        to_addresses = []
+
         for email in emails:
-            log.debug("Setting up the other email settings")
-
-            from_name = config["email"]["from_name"]
-            from_email = config["email"]["from_email"]
-            from_address = formataddr((from_name, from_email))
-
-            # TO FIX - ADD MULTIPLE TO ADDRESSES INSTEAD OF MULTIPLE EMAIL SENDS
             to_name = user.name
             to_email = email
             to_address = formataddr((to_name, to_email))
 
-            subject = "RDRHC Schedule Changes"
-        
-            content = MIMEMultipart('alternative')
-            content['From'] = from_address
-            content['To'] = to_address
-            content['Subject'] = subject
-            content["List-Unsubscribe"] = "<{}>".format(
-                config["email"]["unsubscribe_link"]
-            )
+            to_addresses.append(to_address)
 
-            # Construct the email body
-            textBody = MIMEText(text, 'plain')
-            htmlBody = MIMEText(html, 'html')
+        subject = "RDRHC Schedule Changes"
         
-            content.attach(textBody)
-            content.attach(htmlBody)
-        
-            # Send the email
-            try:
-                if config["debug"]["email_console"]:
-                    log.debug(content.as_string())
-                else:
-                    log.info("Sending update email to %s" % user.name)
+        content = MIMEMultipart('alternative')
+        content['From'] = from_address
+        content['To'] = ",".join(to_addresses)
+        content['Subject'] = subject
+        content["List-Unsubscribe"] = "<{}>".format(
+            config["email"]["unsubscribe_link"]
+        )
 
-                    server = smtplib.SMTP(config["email"]["server"])
-                    server.ehlo()
-                    server.starttls()
-                    server.sendmail(from_address, to_address, content.as_string())
-                    server.quit()
-            except:
-                log.exception("Unable to send update email to %s" % user.name)
+        # Construct the email body
+        textBody = MIMEText(text, 'plain')
+        htmlBody = MIMEText(html, 'html')
+        
+        content.attach(textBody)
+        content.attach(htmlBody)
+        
+        # Send the email
+        try:
+            if config["debug"]["email_console"]:
+                log.debug(content.as_string())
+            else:
+                log.info("Sending update email to %s" % user.name)
+
+                server = smtplib.SMTP(config["email"]["server"])
+                server.ehlo()
+                server.starttls()
+                server.sendmail(from_address, to_address, content.as_string())
+                server.quit()
+        except:
+            log.exception("Unable to send update email to %s" % user.name)

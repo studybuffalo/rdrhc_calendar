@@ -147,7 +147,6 @@ def collect_emails(calendar, EmailAccounts):
     email_list = []
 
     for e in emails:
-        print(e)
         email_list.append(e.email)
     
     return(email_list)
