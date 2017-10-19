@@ -76,7 +76,7 @@ def email_welcome(user, emails, config):
 
                 server.ehlo()
                 server.starttls()
-                server.sendmail(from_address, to_address, content.as_string())
+                server.sendmail(from_address, to_addresses, content.as_string())
                 server.quit()
 
             # Update user profile to mark first_email_sent as true
@@ -324,7 +324,7 @@ def email_schedule(user, emails, config, schedule):
                 server = smtplib.SMTP(config["email"]["server"])
                 server.ehlo()
                 server.starttls()
-                server.sendmail(from_address, to_address, content.as_string())
+                server.sendmail(from_address, to_addresses, content.as_string())
                 server.quit()
         except:
             log.exception("Unable to send update email to %s" % user.name)
