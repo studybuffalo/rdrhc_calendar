@@ -30,7 +30,7 @@ def email_welcome(user, emails, config):
             to_addresses.append(to_address)
 
         subject = "Welcome to Your New Online Schedule"
-
+        print(",".join(to_addresses)
         content = MIMEMultipart('alternative')
         content['From'] = from_address
         content['To'] = ",".join(to_addresses)
