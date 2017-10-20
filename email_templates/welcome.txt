@@ -14,15 +14,13 @@ This program relies on a number of assumptions to properly generate a correct wo
 There is also the risk that there will be an issue with my own servers that may cause delays in schedule updates. While I do try to limit these occurrences, there is always the possibility of unexpected issues that can take several days (or longer) to resolve. Finally, this whole project is done on my own spare time with my own resources. I am happy to provide some degree of assistance in using these programs (largely in the forms of tutorials or how-to documents), but from a practical standpoint I cannot provide individual and personalized tech support. I also cannot dedicate large portions of the work day to this, as it does not fall within the scope of my AHS employment.
 
 Customizability
-I do offer some degree of customization to you schedule. Due to the potential volume of requests from multiple users, the options are limited to the following:
-- Choosing your anonymous calendar name (pending availability of names)
-- Have calendar generate shifts as "Full Day" events
+You will have the option of customizing various aspects of your calendar, including:
+- Choosing your anonymous calendar name
+- Having the calendar generate shifts as "Full Day" events or as specific events with start and stop times
 - Customize start and stop times for specific shifts
-Should you wish to make use of any of these customizations, please let me know and I will update it at my earliest convenience.
 
---
-
-All this information can be found at http://www.studybuffalo.com/calendar/
+Activating Your Account
+Should you wish to make use of any of the calendar customization options or to see details on to sync your schedule to your calendar program, you will need to activate your account with studybuffalo.com. You will be able to use the email associated with your calendar to login. Your will first need to set a password by visiting https://www.studybuffalo.com/accounts/password/reset/ and entering the email for your account. Follow the details in the received email to set a password for your account (please check your spam folder if you do not receive it right away). Once your account is activated, you may visit https://www.studybuffalo.com/rdrhc-calendar/ to make changes to your calendar, view instructions on syncing your schedule, and view all the above disclaimers again.
 
 ------------------------------------
 

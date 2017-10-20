@@ -24,12 +24,12 @@ EXCLUDED CODES
 These codes are for you to review to ensure no work shifts have been missed; these codes have interpretted either as holidays/vacations/sick time/etc. or as being unrelated to start and end times.
 {{ excluded }}{% block excluded %}
 
-The address for your schedule is: http://www.studybuffalo.com/calendar/{{ calendar_name }}.ics
+The address for your schedule is: https://www.studybuffalo.com/calendar/{{ calendar_name }}.ics
 
-For help using the calendar file, please see the tutorials located at: http://www.studybuffalo.com/calendar/
+For help using the calendar file, please see the tutorials located at: https://www.studybuffalo.com/calendar/
 
 If you wish to have any modifications made to your shift codes (including exlcuded or missing shift codes), please contact the owner of this program.
 
 ------------------------------------
 
-If you would no longer like to receive email updates, you may unbscribe by visiting https://www.studybuffalo.ca/unsubscribe/
+If you would no longer like to receive email updates, you may unbscribe by visiting https://www.studybuffalo.com/unsubscribe/
