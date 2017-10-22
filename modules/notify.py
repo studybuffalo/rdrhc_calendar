@@ -102,10 +102,11 @@ def email_schedule(user, emails, config, schedule):
             with open(text_loc, "r") as textFile:
                 text = textFile.read().replace("\n", "\r\n")
         except Exception as e:
-            log.exception(
+            log.warn(
                 "Unable to read welcome email text template at {}".format(
                     text_loc
-                )
+                ),
+                exc_info=e
             )
             text = None
 
@@ -116,10 +117,11 @@ def email_schedule(user, emails, config, schedule):
             with open(html_loc, "r") as htmlFile:
                 html = htmlFile.read()
         except Exception as e:
-            log.exception(
+            log.warn(
                 "Unable to read welcome email html template at {}".format(
                     html_loc
-                )
+                ),
+                exc_info=e
             )
             html = None
         

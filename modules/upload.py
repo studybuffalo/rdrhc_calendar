@@ -13,7 +13,8 @@ def update_db(user, schedule, Shift):
         Shift.objects.filter(sb_user=user.sb_user).delete()
     except Exception as e:
         log.warn(
-            "Unable to remove old schedule for {}".format(user.name)
+            "Unable to remove old schedule for {}".format(user.name),
+            exc_info=e
         )
 
     # Upload the new schedule
@@ -33,5 +34,6 @@ def update_db(user, schedule, Shift):
             log.warn(
                 "Unable to save shift ({}) to schedule for {}".format(
                     s.shift_code, user.name
-                )
+                ),
+                exc_info=e
             )
