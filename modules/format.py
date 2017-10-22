@@ -734,7 +734,8 @@ def assemble_schedule(app_config, excel_files, user, ShiftCode, StatHoliday, Shi
             excel_sheet = excel_book[config["sheet"]]
         except Exception as e:
             log.critical(
-                "Unable to open .xlsx file for user role = {}".format(user.role)
+                "Unable to open .xlsx file for user role = {}".format(user.role),
+                exc_info=e
             )
     elif user.role == "a" or user.role == "t":
         try:
@@ -742,7 +743,8 @@ def assemble_schedule(app_config, excel_files, user, ShiftCode, StatHoliday, Shi
             excel_sheet = excel_book.sheet_by_name(config["sheet"])
         except Exception as e:
             log.critical(
-                "Unable to open .xls file for user role = {}".format(user.role)
+                "Unable to open .xls file for user role = {}\n{}".format(user.role),
+                exc_info=e
             )
 
     # Find column index for this user
