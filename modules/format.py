@@ -743,7 +743,7 @@ def assemble_schedule(app_config, excel_files, user, ShiftCode, StatHoliday, Shi
             excel_sheet = excel_book.sheet_by_name(config["sheet"])
         except Exception as e:
             log.critical(
-                "Unable to open .xls file for user role = {}\n{}".format(user.role),
+                "Unable to open .xls file for user role = {}".format(user.role),
                 exc_info=e
             )
 
