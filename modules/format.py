@@ -296,8 +296,14 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
         except AttributeError:
             # Expected error when there is no date value
             date = ""
+        except IndexError:
+            # Expected error when there is no date value
+            date = ""
         except Exception as e:
-            log.debug("Unable to extract date from worksheet", exc_info=e)
+            log.debug(
+                "Unable to extract date from worksheet in row {}".format(i), 
+                exc_info=e
+            )
             date = ""
 
 		# Extract shift code
@@ -307,10 +313,16 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
             elif user.role == "a" or user.role == "t":
                 shift_codes = sheet.cell(i, index).value.upper()
         except AttributeError:
-            # Expected error when there is no date value
+            # Expected error when there is no shift code value
+            shift_codes = ""
+        except IndexError:
+            # Expect error when there is no shift code value
             shift_codes = ""
         except Exception as e:
-            log.debug("Unable to extract shift code from worksheet", exc_info=e)
+            log.debug(
+                "Unable to extract shift code from worksheet in row {}".format(i),
+                exc_info=e
+            )
             shift_codes = ""
 
         # Extract cell comments
@@ -329,8 +341,14 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
                 comment = str(comment)
                 comment = comment.replace("\n", " ")
                 comment = comment.strip()
+        except KeyError:
+            # Expected error when there is no comment
+            comment = ""
         except Exception as e:
-            log.debug("Unable to extract comments from worksheet")
+            log.debug(
+                "Unable to extract comments from worksheet in row {}".format(i),
+                exc_info=e
+            )
             comment = ""
         
         # Add shift to master list if it has a date and shift code
