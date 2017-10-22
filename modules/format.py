@@ -764,7 +764,7 @@ def assemble_schedule(app_config, excel_files, user, ShiftCode, StatHoliday, Shi
         except Exception as e:
             log.critical(
                 "Unable to open .xlsx file for user role = {}".format(user.role),
-                exc_info=e
+                exc_info=True
             )
     elif user.role == "a" or user.role == "t":
         try:

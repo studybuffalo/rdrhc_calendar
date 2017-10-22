@@ -1,0 +1,4 @@
+django==1.11.4
+openpyxl==2.4.5
+unipath==1.1
+xlrd==1.0.0
