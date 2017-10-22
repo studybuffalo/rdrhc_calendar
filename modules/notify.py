@@ -45,8 +45,11 @@ def email_welcome(user, emails, config):
         try:
             with open(textLoc, "r") as textFile:
                 text = textFile.read().replace("\n", "\r\n")
-        except:
-            log.exception("Unable to read welcome email text template")
+        except Exception:
+            log.warn(
+                "Unable to read welcome email text template",
+                exc_info=True
+            )
             return
 
         # Collects html welcome email from template file
@@ -55,8 +58,11 @@ def email_welcome(user, emails, config):
         try:
             with open(htmlLoc, "r") as htmlFile:
                 html = htmlFile.read()
-        except:
-            log.exception("Unable to read welcome email html template")
+        except Exception:
+            log.exception(
+                "Unable to read welcome email html template",
+                exc_info=True
+            )
             return
 
         # Assemble an HTML and plain text version
@@ -83,8 +89,11 @@ def email_welcome(user, emails, config):
             user.first_email_sent = True
             user.save()
 
-        except:
-            log.exception("Unable to send welcome email to %s" % user.name)
+        except Exception:
+            log.error(
+                "Unable to send welcome email to {}".format(user.name),
+                exc_info=True
+            )
 
 def email_schedule(user, emails, config, schedule):
     """Emails user with any schedule changes"""
@@ -101,12 +110,12 @@ def email_schedule(user, emails, config, schedule):
         try:
             with open(text_loc, "r") as textFile:
                 text = textFile.read().replace("\n", "\r\n")
-        except Exception as e:
+        except Exception:
             log.warn(
                 "Unable to read welcome email text template at {}".format(
                     text_loc
                 ),
-                exc_info=e
+                exc_info=True
             )
             text = None
 
@@ -116,12 +125,12 @@ def email_schedule(user, emails, config, schedule):
         try:
             with open(html_loc, "r") as htmlFile:
                 html = htmlFile.read()
-        except Exception as e:
+        except Exception:
             log.warn(
                 "Unable to read welcome email html template at {}".format(
                     html_loc
                 ),
-                exc_info=e
+                exc_info=True
             )
             html = None
         
@@ -328,5 +337,8 @@ def email_schedule(user, emails, config, schedule):
                 server.starttls()
                 server.sendmail(from_address, to_addresses, content.as_string())
                 server.quit()
-        except:
-            log.exception("Unable to send update email to %s" % user.name)
+        except Exception:
+            log.error(
+                "Unable to send update email to {}".format(user.name),
+                exc_info=True
+            )

@@ -179,7 +179,7 @@ log.info("STARTING RDRHC CALENDAR GENERATOR")
 app_config = collect_config(config)
 
 # Collect the Excel schedule files
-log.info("Retrieve the Excel Schedules")
+log.info("Retrieving the Excel Schedules")
 excel_files = retrieve.retrieve_schedules(app_config["excel"])
 
 # Collect a list of all the user names
