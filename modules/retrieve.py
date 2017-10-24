@@ -10,6 +10,8 @@ def get_date(tz_string):
     """Generates todays date as string (in format yyyy-mm-dd)"""
     tz = pytz.timezone(tz_string)
     today = tz.localize(datetime.utcnow())
+    
+    log.debug("Today is {}".format(today))
 
     year = today.year
     month = "%02d" % today.month
