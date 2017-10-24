@@ -23,7 +23,7 @@ def retrieve_schedules(config):
 
     schedule_loc = config["excel"]["schedule_loc"]
 
-    date = get_date(config["excel"]["timezone"])
+    date = get_date(config["timezone"])
 
     # Assemble the details for the assistant schedule
     file_name_a = "{0}_{1}.{2}".format(date, "assistant", config["ext_a"])
