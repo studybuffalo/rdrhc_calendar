@@ -11,6 +11,7 @@ def get_date(tz_string):
     tz = pytz.timezone(tz_string)
     today = datetime.utcnow().astimezone(tz)
     
+    log.debug("UTC time is {}".format(datetime.utcnow()))
     log.debug("Today is {}".format(today))
 
     year = today.year
