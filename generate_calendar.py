@@ -74,6 +74,7 @@ def collect_config(config):
     )
 
     return {
+        "timezone": config.get("localization", "timezone"),
         "excel": {
             "schedule_loc": config.get("schedules", "save_location"),
             "ext_a": config.get("schedules", "type_a"),
@@ -180,7 +181,7 @@ app_config = collect_config(config)
 
 # Collect the Excel schedule files
 log.info("Retrieving the Excel Schedules")
-excel_files = retrieve.retrieve_schedules(app_config["excel"])
+excel_files = retrieve.retrieve_schedules(app_config)
 
 # Collect a list of all the user names
 log.info("Retrieving all calendar users")

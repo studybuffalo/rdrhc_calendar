@@ -1,13 +1,16 @@
 from datetime import datetime
 import logging
+import pytz
 from unipath import Path
 
 # Setup Logging
 log = logging.getLogger(__name__)
 
-def get_date():
+def get_date(tz_string):
     """Generates todays date as string (in format yyyy-mm-dd)"""
-    today = datetime.today()
+    tz = pytz.timezone(tz_string)
+    today = tz.localize(datetime.utcnow())
+
     year = today.year
     month = "%02d" % today.month
     day = "%02d" % today.day
@@ -18,9 +21,9 @@ def get_date():
 def retrieve_schedules(config):
     log.debug("Retrieving location of schedules from app_config")
 
-    schedule_loc = config["schedule_loc"]
+    schedule_loc = config["excel"]["schedule_loc"]
 
-    date = get_date()
+    date = get_date(config["excel"]["timezone"])
 
     # Assemble the details for the assistant schedule
     file_name_a = "{0}_{1}.{2}".format(date, "assistant", config["ext_a"])
