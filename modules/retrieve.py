@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 def get_date(tz_string):
     """Generates todays date as string (in format yyyy-mm-dd)"""
     tz = pytz.timezone(tz_string)
-    today = tz.localize(datetime.utcnow())
+    today = datetime.utcnow().astimezone(tz)
     
     log.debug("Today is {}".format(today))
 
