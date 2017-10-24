@@ -26,13 +26,19 @@ def retrieve_schedules(config):
     date = get_date(config["timezone"])
 
     # Assemble the details for the assistant schedule
-    file_name_a = "{0}_{1}.{2}".format(date, "assistant", config["ext_a"])
+    file_name_a = "{0}_{1}.{2}".format(
+        date, "assistant", config["excel"]["ext_a"]
+    )
 
     # Assemble the details for the pharmacist schedule
-    file_name_p = "{0}_{1}.{2}".format(date, "pharmacist", config["ext_p"])
+    file_name_p = "{0}_{1}.{2}".format(
+        date, "pharmacist", config["excel"]["ext_p"]
+    )
     
     # Assemble the details for the technician schedule
-    file_name_t = "{0}_{1}.{2}".format(date, "technician", config["ext_t"])
+    file_name_t = "{0}_{1}.{2}".format(
+        date, "technician", config["excel"]["ext_t"]
+    )
 
     # Return the final details
     return {
