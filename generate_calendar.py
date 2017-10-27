@@ -171,7 +171,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "studybuffalo.settings")
 sys.path.append(djangoApp)
 application = get_wsgi_application()
 
-from rdrhc_calendar.models import CalendarUser, ShiftCode, StatHoliday, Shift
+from rdrhc_calendar.models import CalendarUser, ShiftCode, StatHoliday, Shift, MissingShiftCode
 from allauth.account.models import EmailAddress
 
 log.info("STARTING RDRHC CALENDAR GENERATOR")
@@ -186,6 +186,9 @@ excel_files = retrieve.retrieve_schedules(app_config)
 # Collect a list of all the user names
 log.info("Retrieving all calendar users")
 users = CalendarUser.objects.all()
+
+# Set to hold any codes not in Django DB
+missing_codes = set()
 
 # Cycle through each user and process their schedule
 for user in users:
@@ -211,6 +214,16 @@ for user in users:
 
         # Email the user the calendar details
         notify.email_schedule(user, emails, app_config, schedule)
+        
+        # Add the missing codes to the set
+        missing_codes = missing_codes.union(schedule.missing_upload)
+
+# Upload the missing codes to the database
+missing_upload = upload.update_missing_codes(missing_codes, user.role, MissingShiftCode)
+
+# Notify owner that there are new codes to upload
+if missing_upload:
+    notify.email_missing_codes(app_config)
 
 log.info("CALENDAR GENERATION COMPLETE")
 

@@ -39,13 +39,17 @@ class FormattedShift(object):
 class Schedule(object):
     """Holds all the users shifts and any noted modifications"""
 
-    def __init__(self, shifts, additions, deletions, changes, missing, null):
+    def __init__(
+        self, shifts, additions, deletions, changes, missing, null, 
+        missing_upload
+    ):
         self.shifts = shifts
         self.additions = additions
         self.deletions = deletions
         self.changes = changes
         self.missing = missing
         self.null = null
+        shift.missing_upload = missing_upload
 
 class EmailShift(object):
     """Holds details on shift modifications for emailing to the user"""
@@ -502,6 +506,7 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
     schedule = []
     null_shifts = []
     missing_shifts = []
+    missing_codes_for_upload = set()
     
     for shift in raw_schedule:
         # Search for a shift match
@@ -598,6 +603,9 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
             missing_shifts.append(
                 EmailShift(shift.start_date, msg)
             )
+
+            # Add the missing code to the missing code set
+            missing_codes_for_upload.add(shift.shift_code)
                 
             # Set default times
             if stat_match:
@@ -721,7 +729,10 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
                 null.append(n)
 
     # Return all the required items to generate the calendar and emails
-    return Schedule(schedule, additions, deletions, changes, missing, null)
+    return Schedule(
+        schedule, additions, deletions, changes, missing, null, 
+        missing_codes_for_upload
+    )
 
 def return_column_index(sheet, user, name_row, col_start, col_end):
     """Determines the Excel column containing the provided user"""

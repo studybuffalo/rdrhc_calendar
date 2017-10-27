@@ -37,3 +37,15 @@ def update_db(user, schedule, Shift):
                 ),
                 exc_info=True
             )
+
+def update_missing_codes(codes, role, MissingShiftCode):
+    """Uploads any new missing shift codes"""
+    for code in codes:
+        missing_code = MisshingShiftCode(
+            code = code
+            role = role
+        )
+
+        try:
+            missing_code.save()
+        Except
