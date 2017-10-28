@@ -49,7 +49,7 @@ class Schedule(object):
         self.changes = changes
         self.missing = missing
         self.null = null
-        shift.missing_upload = missing_upload
+        self.missing_upload = missing_upload
 
 class EmailShift(object):
     """Holds details on shift modifications for emailing to the user"""

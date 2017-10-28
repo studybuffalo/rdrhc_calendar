@@ -130,10 +130,14 @@ def collect_config(config):
             "server": config.get("email", "server"),
             "from_name": config.get("email", "from_name"),
             "from_email": config.get("email", "from_email"),
+            "owner_name": config.get("email", "owner_name"),
+            "owner_email": config.get("email", "owner_email"),
             "welcome_text": config.get("email", "welcome_text", raw=True),
             "welcome_html": config.get("email", "welcome_html", raw=True),
             "update_text": config.get("email", "update_text", raw=True),
             "update_html": config.get("email", "update_html", raw=True),
+            "missing_codes_text": config.get("email", "missing_codes_text", raw=True),
+            "missing_codes_html": config.get("email", "missing_codes_html", raw=True),
             "unsubscribe_link": config.get("email", "unsubscribe_link")
         },
         "debug": {
@@ -223,7 +227,7 @@ missing_upload = upload.update_missing_codes(missing_codes, user.role, MissingSh
 
 # Notify owner that there are new codes to upload
 if missing_upload:
-    notify.email_missing_codes(app_config)
+    notify.email_missing_codes(missing_upload, app_config)
 
 log.info("CALENDAR GENERATION COMPLETE")
 

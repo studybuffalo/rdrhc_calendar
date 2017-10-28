@@ -342,3 +342,97 @@ def email_schedule(user, emails, config, schedule):
                 "Unable to send update email to {}".format(user.name),
                 exc_info=True
             )
+
+def email_missing_codes(missing_codes, config):
+    """Emails owner with any new missing shift codes"""
+
+    log.debug("New missing shift codes uploaded to database - notifying owner")
+
+    # Opens the notification (text) template
+    log.debug("Opening the email templates")
+
+    text_loc = config["email"]["missing_codes_text"]
+        
+    try:
+        with open(text_loc, "r") as textFile:
+            text = textFile.read().replace("\n", "\r\n")
+    except Exception:
+        log.warn(
+            "Unable to read missing codes email text template at {}".format(
+                text_loc
+            ),
+            exc_info=True
+        )
+        text = None
+
+    # Opens the notification (text) template
+    html_loc = config["email"]["missing_codes_html"]
+        
+    try:
+        with open(html_loc, "r") as htmlFile:
+            html = htmlFile.read()
+    except Exception:
+        log.warn(
+            "Unable to read missing codes email html template at {}".format(
+                html_loc
+            ),
+            exc_info=True
+        )
+        html = None
+    
+    # Add all the missing shift codes to the email
+    log.debug("Formatting missing shift codes for email")
+
+    missing_codes_text = []
+    missing_codes_html = []
+
+    for code in missing_codes:
+        missing_codes_text.append(" - {}".format(code))
+        missing_codes_html.append("<li>{}</li>".format(code))
+
+    text = text.replace("{{ codes }}", "\r\n".join(missing_codes_text))
+    html = html.replace("{{ codes }}", "".join(missing_codes_html))
+
+    # Remove the block markers
+    text = text.replace("{% block codes %}", "")
+    html = html.replace("{% block codes %}", "")
+
+    # Setup email settings
+    log.debug("Setting up the other email settings")
+
+    from_name = config["email"]["from_name"]
+    from_email = config["email"]["from_email"]
+    from_address = formataddr((from_name, from_email))
+
+    to_name = config["email"]["owner_name"]
+    to_email = config["email"]["owner_email"]
+    to_address = formataddr((to_name, to_email))
+
+    subject = "RDRHC Calendar Missing Shift Codes"
+        
+    content = MIMEMultipart('alternative')
+    content['From'] = from_address
+    content['To'] = ",".join(to_address)
+    content['Subject'] = subject
+
+    # Construct the email body
+    text_body = MIMEText(text, 'plain')
+    html_body = MIMEText(html, 'html')
+        
+    content.attach(text_body)
+    content.attach(html_body)
+        
+    # Send the email
+    try:
+        if config["debug"]["email_console"]:
+            log.debug(content.as_string())
+        else:
+            log.info("Sending missing shift code email")
+
+            server = smtplib.SMTP(config["email"]["server"])
+            server.ehlo()
+            server.starttls()
+            server.sendmail(from_address, to_address, content.as_string())
+            server.quit()
+    except Exception:
+        log.error("Unable to send missing shift code email", exc_info=True)
