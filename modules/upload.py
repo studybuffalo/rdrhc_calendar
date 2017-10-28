@@ -38,24 +38,24 @@ def update_db(user, schedule, Shift):
                 exc_info=True
             )
 
-def update_missing_codes(codes, role, MissingShiftCode):
+def update_missing_codes(missing_codes, MissingShiftCode):
     """Uploads any new missing shift codes"""
     log.debug("Checking for missing shift codes")
 
     new_codes = []
 
-    for code in codes:
-        # If code has any characters, see if it already is uploaded
-        if len(code):
-            retrieved_code, missing_code = MissingShiftCode.objects.get_or_create(
-                code=code,
-                role=role
-            )
+    for role, code_set in missing_codes.items():
+        for code in code_set:
+            if code:
+                retrieved_code, missing_code = MissingShiftCode.objects.get_or_create(
+                    code=code,
+                    role=role
+                )
 
-            # If this is a new code, record it to email owner
-            if missing_code:
-                log.debug("New code to upload: {}".format(code))
+                # If this is a new code, record it to email owner
+                if missing_code:
+                    log.debug("New code to upload: {}".format(code))
                 
-                new_codes.append("{} - {}".format(role, code))
+                    new_codes.append("{} - {}".format(role, code))
 
     return new_codes

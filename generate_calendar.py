@@ -192,7 +192,11 @@ log.info("Retrieving all calendar users")
 users = CalendarUser.objects.all()
 
 # Set to hold any codes not in Django DB
-missing_codes = set()
+missing_codes = {
+    "a": set(),
+    "p": set(),
+    "t": set()
+}
 
 # Cycle through each user and process their schedule
 for user in users:
@@ -220,10 +224,12 @@ for user in users:
         notify.email_schedule(user, emails, app_config, schedule)
         
         # Add the missing codes to the set
-        missing_codes = missing_codes.union(schedule.missing_upload)
+        missing_codes[user.role] = missing_codes[user.role].union(
+            schedule.missing_upload
+        )
 
 # Upload the missing codes to the database
-missing_upload = upload.update_missing_codes(missing_codes, user.role, MissingShiftCode)
+missing_upload = upload.update_missing_codes(missing_codes, MissingShiftCode)
 
 # Notify owner that there are new codes to upload
 if missing_upload:
