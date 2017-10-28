@@ -412,7 +412,7 @@ def email_missing_codes(missing_codes, config):
         
     content = MIMEMultipart('alternative')
     content['From'] = from_address
-    content['To'] = ",".join(to_address)
+    content['To'] = to_address
     content['Subject'] = subject
 
     # Construct the email body
