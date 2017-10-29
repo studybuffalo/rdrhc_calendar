@@ -151,7 +151,7 @@ def email_schedule(user, emails, config, schedule):
                 additions_html.append("<li>{}</li>".format(a.msg))
 
             text = text.replace("{{ additions }}", "\r\n".join(additions_text))
-            html = html.replace("{{ additions }}", "".join(additions_html))
+            html = html.replace("{{ additions }}", "\r\n".join(additions_html))
 
             # Remove the block markers
             text = text.replace("{% block additions %}", "")
@@ -175,7 +175,7 @@ def email_schedule(user, emails, config, schedule):
                 deletions_html.append("<li>{}</li>".format(d.msg))
                 
             text = text.replace("{{ deletions }}", "\r\n".join(deletions_text))
-            html = html.replace("{{ deletions }}", "".join(deletions_html))
+            html = html.replace("{{ deletions }}", "\r\n".join(deletions_html))
 
             # Remove the block markers
             text = text.replace("{% block deletions %}", "")
@@ -199,7 +199,7 @@ def email_schedule(user, emails, config, schedule):
                 changes_html.append("<li>{}</li>".format(c.msg))
                 
             text = text.replace("{{ changes }}", "\r\n".join(changes_text))
-            html = html.replace("{{ changes }}", "".join(changes_html))
+            html = html.replace("{{ changes }}", "\r\n".join(changes_html))
 
             # Remove the block markers
             text = text.replace("{% block changes %}", "")
@@ -249,7 +249,7 @@ def email_schedule(user, emails, config, schedule):
                 missing_html.append("<li>{}</li>".format(m.msg))
                 
             text = text.replace("{{ missing }}", "\r\n".join(missing_text))
-            html = html.replace("{{ missing }}", "".join(missing_html))
+            html = html.replace("{{ missing }}", "\r\n".join(missing_html))
 
             # Remove the block markers
             text = text.replace("{% block missing %}", "")
@@ -273,7 +273,7 @@ def email_schedule(user, emails, config, schedule):
                 null_html.append("<li>{}</li>".format(n.msg))
                 
             text = text.replace("{{ excluded }}", "\r\n".join(null_text))
-            html = html.replace("{{ excluded }}", "".join(null_html))
+            html = html.replace("{{ excluded }}", "\r\n".join(null_html))
 
             # Remove the block markers
             text = text.replace("{% block excluded %}", "")
@@ -391,7 +391,7 @@ def email_missing_codes(missing_codes, config):
         missing_codes_html.append("<li>{}</li>".format(code))
 
     text = text.replace("{{ codes }}", "\r\n".join(missing_codes_text))
-    html = html.replace("{{ codes }}", "".join(missing_codes_html))
+    html = html.replace("{{ codes }}", "\r\n".join(missing_codes_html))
 
     # Remove the block markers
     text = text.replace("{% block codes %}", "")
