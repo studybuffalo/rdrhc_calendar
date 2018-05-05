@@ -175,6 +175,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "studybuffalo.settings")
 sys.path.append(djangoApp)
 application = get_wsgi_application()
 
+# pylint: disable=import-error
 from rdrhc_calendar.models import CalendarUser, ShiftCode, StatHoliday, Shift, MissingShiftCode
 from allauth.account.models import EmailAddress
 
