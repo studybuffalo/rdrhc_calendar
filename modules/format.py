@@ -362,10 +362,13 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
             )
             comment = ""
 
-        # Add shift to master list if it has a date and shift code
+        # Add shift to master list if has date and non-whitespace shift code
         if shift_codes != "" and re.match(r"\s+$", shift_codes) is None and date != "":
             # Split each shift code on spaces or slashes
             shift_codes = re.split(r"(?:\s|/)+", shift_codes)
+            
+            # Remove any duplicate shift codes
+            shift_codes = list(set(shift_codes))
             
             for code in shift_codes:
                 shifts.append(RawShift(code, date, comment))
