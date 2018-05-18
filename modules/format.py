@@ -369,7 +369,7 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
             
             # Remove any duplicate shift codes
             shift_codes = list(set(shift_codes))
-            
+
             for code in shift_codes:
                 shifts.append(RawShift(code, date, comment))
                 
@@ -422,7 +422,11 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
         try:
             first_day = schedule[0].start_date
             last_day = schedule[-1].start_date
-        except Exception:
+        except IndexError:
+            # Known error when a user has no shifts
+            first_day = datetime(2001, 1, 1)
+            last_day = datetime(2020, 12, 31)
+        except Excpetion:
             log.warn(
                 "Unable to retrieve statutory holidys based on schedule dates",
                 exc_info=True
