@@ -304,8 +304,12 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
             # Expected error when there is no date value
             date = ""
         except Exception:
-            log.warning(
-                "Unable to extract date from worksheet in row {}".format(i), 
+            if user.role == "p":
+                sheet.cell(row=i, column=date_col).value
+            elif user.role == "a" or user.role == "t":
+                value = sheet.cell(i, date_col).value
+            log.error(
+                "Unable to extract date from worksheet in row {} - value = {}".format(i, value), 
                 exc_info=True
             )
             date = ""
