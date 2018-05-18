@@ -426,7 +426,7 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
             # Known error when a user has no shifts
             first_day = datetime(2001, 1, 1)
             last_day = datetime(2020, 12, 31)
-        except Excpetion:
+        except Exception:
             log.warn(
                 "Unable to retrieve statutory holidys based on schedule dates",
                 exc_info=True
