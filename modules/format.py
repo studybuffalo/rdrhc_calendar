@@ -19,7 +19,7 @@ class RawShift(object):
         self.comment = comment
 
     def __str__(self):
-        return "{} ({})".format(self.shift, self.start_date)
+        return "{} ({})".format(self.shift_code, self.start_date)
 
 class FormattedShift(object):
     """Holds expanded details on a user's specified shift"""
@@ -162,7 +162,7 @@ def generate_calendar(user, schedule, cal_loc):
                 )
                 start_time = "000000"
                 end_date = "20010102"
-                endtime = "000000"
+                end_time = "000000"
 
             lines.append("DTSTART;TZID=America/Edmonton:%sT%s" % (start_date, start_time))
             lines.append("DTEND;TZID=America/Edmonton:%sT%s" % (end_date, end_time))
@@ -178,7 +178,7 @@ def generate_calendar(user, schedule, cal_loc):
                     exc_info=True
                 )
                 end_date = "20010102"
-                endtime = "000000"
+                end_time = "000000"
 
             lines.append("DTSTART;VALUE=DATE:%s" % start_date)
             lines.append("DTEND;VALUE=DATE:%s" % end_date)
@@ -304,7 +304,7 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
             # Expected error when there is no date value
             date = ""
         except Exception:
-            log.debug(
+            log.warning(
                 "Unable to extract date from worksheet in row {}".format(i), 
                 exc_info=True
             )
@@ -358,7 +358,7 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
         # Add shift to master list if it has a date and shift code
         if shift_codes != "" and date != "":
             # Split each shift code on spaces or slashes
-            shift_codes = re.split("(?:\s|/)+", shift_codes)
+            shift_codes = re.split(r"(?:\s|/)+", shift_codes)
             
             for code in shift_codes:
                 shifts.append(RawShift(code, date, comment))
@@ -432,7 +432,6 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
         for holiday in stat_holidays:
             if date == holiday.date:
                 return True
-                break
         
         return False
 
