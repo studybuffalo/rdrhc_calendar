@@ -309,7 +309,7 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
             elif user.role == "a" or user.role == "t":
                 value = sheet.cell(i, date_col).value
             log.error(
-                "Unable to extract date from worksheet in row {} - value = {}".format(i, value), 
+                "Unable to extract date from worksheet in row {} - role = {}- value = {}".format(i, user.role, value),
                 exc_info=True
             )
             date = ""
