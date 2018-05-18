@@ -363,6 +363,12 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
             comment = ""
 
         # Add shift to master list if it has a date and shift code
+        print("Search Test")
+        re.search(r"^\s+$", shift_codes)
+
+        print("Mathc Test")
+        re.match(r"\s+$", shift_codes)
+
         if shift_codes != "" and date != "":
             # Split each shift code on spaces or slashes
             shift_codes = re.split(r"(?:\s|/)+", shift_codes)
