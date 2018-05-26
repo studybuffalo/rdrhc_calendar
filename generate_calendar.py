@@ -171,7 +171,7 @@ log = logging.getLogger(__name__)
 # Setup connection to the Django server
 djangoApp = config.get("django", "location")
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "studybuffalo.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
 sys.path.append(djangoApp)
 application = get_wsgi_application()
 
