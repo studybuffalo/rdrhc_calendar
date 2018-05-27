@@ -29,6 +29,11 @@ import os
 import sys
 from unipath import Path
 
+try:
+    1 / 0
+except ZeroDivisionError:
+    client.captureException()
+    
 def collect_config(config):
     """Collects and formats all the require configuration data"""
     weekday_start = datetime.strptime(
