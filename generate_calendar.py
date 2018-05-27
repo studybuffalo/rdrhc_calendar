@@ -170,10 +170,8 @@ log = logging.getLogger(__name__)
 
 # Setup connection to the Django server
 djangoApp = config.get("django", "location")
-print(djangoApp)
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
-sys.path.append(djangoApp)
-application = get_wsgi_application()
 
 # pylint: disable=import-error
 from rdrhc_calendar.models import CalendarUser, ShiftCode, StatHoliday, Shift, MissingShiftCode
