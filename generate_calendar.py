@@ -169,10 +169,11 @@ logging.config.fileConfig(log_config)
 log = logging.getLogger(__name__)
 
 # Setup connection to the Django server
-djangoApp = config.get("django", "location")
+django_path = config.get("django", "django_path")
+django_app_path = config.get("django", "app_path")
 
-sys.path.append(djangoApp)
-sys.path.append("/home/django/studybuffalo/study_buffalo")
+sys.path.append(django_path)
+sys.path.append(django_app_path)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
 django.setup()
