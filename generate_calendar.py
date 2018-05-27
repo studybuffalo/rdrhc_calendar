@@ -172,7 +172,7 @@ log = logging.getLogger(__name__)
 djangoApp = config.get("django", "location")
 
 sys.path.append(djangoApp)
-sys.path.append("/home/django/study_buffalo")
+sys.path.append("/home/django/studybuffalo")
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
 django.setup()
