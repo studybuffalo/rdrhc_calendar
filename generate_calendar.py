@@ -28,12 +28,15 @@ from modules import format, notify, retrieve, upload
 import os
 import sys
 from unipath import Path
+from raven import Client
+
+client = Client('https://7db3dda0b6184c6a9a279b6697cafd96:7346778a858c442db46236b414e8de4a@sentry.studybuffalo.com/4')
 
 try:
     1 / 0
 except ZeroDivisionError:
     client.captureException()
-    
+
 def collect_config(config):
     """Collects and formats all the require configuration data"""
     weekday_start = datetime.strptime(
