@@ -173,7 +173,7 @@ djangoApp = config.get("django", "location")
 
 sys.path.append(djangoApp)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
-
+from django.conf import settings
 
 # pylint: disable=import-error
 from rdrhc_calendar.models import CalendarUser, ShiftCode, StatHoliday, Shift, MissingShiftCode
