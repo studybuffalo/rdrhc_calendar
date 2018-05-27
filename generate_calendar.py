@@ -21,7 +21,7 @@
 
 import configparser
 from datetime import datetime, timedelta
-from django.core.wsgi import get_wsgi_application
+import django
 import logging
 import logging.config
 from modules import format, notify, retrieve, upload
@@ -173,7 +173,7 @@ djangoApp = config.get("django", "location")
 
 sys.path.append(djangoApp)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
-from django.conf import settings
+django.setup()
 
 # pylint: disable=import-error
 from rdrhc_calendar.models import CalendarUser, ShiftCode, StatHoliday, Shift, MissingShiftCode
