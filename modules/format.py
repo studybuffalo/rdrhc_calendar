@@ -783,11 +783,16 @@ def assemble_schedule(app_config, excel_files, user, ShiftCode, StatHoliday, Shi
 
     # Open the proper Excel worksheet
     log.debug("Opening the Excel worksheet")
+    excel_sheet = None
 
     if user.role == "p":
         try:
             excel_book = openpyxl.load_workbook(file_loc)
             excel_sheet = excel_book[config["sheet"]]
+        except FileNotFoundError:
+            log.critical(
+                'Cannot open .xlsx file for user role = {}: {}'.format(user.role, file_loc)
+            )
         except Exception:
             log.critical(
                 "Unable to open .xlsx file for user role = {}".format(user.role),
@@ -797,6 +802,10 @@ def assemble_schedule(app_config, excel_files, user, ShiftCode, StatHoliday, Shi
         try:
             excel_book = xlrd.open_workbook(file_loc)
             excel_sheet = excel_book.sheet_by_name(config["sheet"])
+        except FileNotFoundError:
+            log.critical(
+                'Cannot open .xls file for user role = {}: {}'.format(user.role, file_loc)
+            )
         except Exception:
             log.critical(
                 "Unable to open .xls file for user role = {}".format(user.role),
