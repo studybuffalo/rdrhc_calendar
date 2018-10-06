@@ -165,7 +165,7 @@ config = configparser.ConfigParser()
 config.read(Path(root.parent, "config", "rdrhc_calendar.cfg"))
 
 # Setup Sentry
-client = Client(config.get('sentry', 'dns'))
+client = Client(config.get('sentry', 'dsn'))
 
 # Setup Logging
 log_config = Path(root.parent, "config", "rdrhc_calendar_logging.cfg")
