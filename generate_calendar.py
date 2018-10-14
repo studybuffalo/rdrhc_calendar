@@ -1,24 +1,24 @@
-'''Downloads, extracts, and uploads schedules for AHS CZ pharmacists.
+"""Downloads, extracts, and uploads schedules for AHS CZ pharmacists.
     Last Update: 2017-Oct-01
 
     Copyright (c) Notices
         2017  Joshua R. Torrance  <studybuffalo@studybuffalo.com>
-    
-    This program is free software: you can redistribute it and/or 
-    modify it under the terms of the GNU General Public License as 
-    published by the Free Software Foundation, either version 3 of the 
+
+    This program is free software: you can redistribute it and/or
+    modify it under the terms of the GNU General Public License as
+    published by the Free Software Foundation, either version 3 of the
     License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
     You should have received a copy of the GNU General Public License
-    along with this program.  If not, 
+    along with this program.  If not,
     see <http://www.gnu.org/licenses/>.
-    SHOULD YOU REQUIRE ANY EXCEPTIONS TO THIS LICENSE, PLEASE CONTACT 
+    SHOULD YOU REQUIRE ANY EXCEPTIONS TO THIS LICENSE, PLEASE CONTACT
     THE COPYRIGHT HOLDERS.
-'''
-import os
+"""
+
 import sys
 
 import configparser
@@ -26,11 +26,13 @@ from datetime import datetime, timedelta
 import json
 import logging
 import logging.config
-from modules import format, notify, retrieve, upload
 import requests
-from unipath import Path
 import sentry_sdk
-from sentry_sdk.integrations.logging import LoggingIntegration
+from unipath import Path
+
+
+from modules import format_schedule, notify, retrieve, upload
+
 
 def collect_config(config):
     '''Collects and formats all the require configuration data'''
@@ -38,7 +40,7 @@ def collect_config(config):
         config.get('schedules', 'default_weekday_start'),
         '%H:%M'
     )
-    
+
     weekend_start = datetime.strptime(
         config.get('schedules', 'default_weekend_start'),
         '%H:%M'
@@ -52,7 +54,7 @@ def collect_config(config):
     weekday_duration = config.getfloat('schedules', 'default_weekday_duration')
     weekday_hours = int(weekday_duration)
     weekday_minutes = int((weekday_duration*60) % 60)
- 
+
     weekend_duration = config.getfloat('schedules', 'default_weekend_duration')
     weekend_hours = int(weekend_duration)
     weekend_minutes = int((weekend_duration*60) % 60)
@@ -62,17 +64,17 @@ def collect_config(config):
     stat_minutes = int((stat_duration*60) % 60)
 
     weekday_end = weekday_start + timedelta(
-        hours=weekday_hours, 
+        hours=weekday_hours,
         minutes=weekday_minutes
     )
 
     weekend_end = weekend_start + timedelta(
-        hours=weekend_hours, 
+        hours=weekend_hours,
         minutes=weekend_minutes
     )
 
     stat_end = stat_start + timedelta(
-        hours=stat_hours, 
+        hours=stat_hours,
         minutes=stat_minutes
     )
 
@@ -90,7 +92,7 @@ def collect_config(config):
             'sheet': config.get('schedules', 'sheet_a'),
             'name_row': config.getint('schedules', 'name_row_a'),
             'col_start': config.getint('schedules', 'name_col_start_a'),
-            'col_end': config.getint('schedules', 'name_col_end_a') ,
+            'col_end': config.getint('schedules', 'name_col_end_a'),
             'row_start': config.getint('schedules', 'shift_row_start_a'),
             'row_end': config.getint('schedules', 'shift_row_end_a'),
             'date_col': config.getint('schedules', 'date_col_a')
@@ -99,7 +101,7 @@ def collect_config(config):
             'sheet': config.get('schedules', 'sheet_p'),
             'name_row': config.getint('schedules', 'name_row_p'),
             'col_start': config.getint('schedules', 'name_col_start_p'),
-            'col_end': config.getint('schedules', 'name_col_end_p') ,
+            'col_end': config.getint('schedules', 'name_col_end_p'),
             'row_start': config.getint('schedules', 'shift_row_start_p'),
             'row_end': config.getint('schedules', 'shift_row_end_p'),
             'date_col': config.getint('schedules', 'date_col_p')
@@ -108,7 +110,7 @@ def collect_config(config):
             'sheet': config.get('schedules', 'sheet_t'),
             'name_row': config.getint('schedules', 'name_row_t'),
             'col_start': config.getint('schedules', 'name_col_start_t'),
-            'col_end': config.getint('schedules', 'name_col_end_t') ,
+            'col_end': config.getint('schedules', 'name_col_end_t'),
             'row_start': config.getint('schedules', 'shift_row_start_t'),
             'row_end': config.getint('schedules', 'shift_row_end_t'),
             'date_col': config.getint('schedules', 'date_col_t')
@@ -141,32 +143,36 @@ def collect_config(config):
             'welcome_html': config.get('email', 'welcome_html', raw=True),
             'update_text': config.get('email', 'update_text', raw=True),
             'update_html': config.get('email', 'update_html', raw=True),
-            'missing_codes_text': config.get('email', 'missing_codes_text', raw=True),
-            'missing_codes_html': config.get('email', 'missing_codes_html', raw=True),
+            'missing_codes_text': config.get(
+                'email', 'missing_codes_text', raw=True
+            ),
+            'missing_codes_html': config.get(
+                'email', 'missing_codes_html', raw=True
+            ),
             'unsubscribe_link': config.get('email', 'unsubscribe_link')
         },
         'debug': {
             'email_console': config.getboolean('debug', 'email_console')
         }
     }
-   
-def collect_emails(calendar, EmailAccounts):
+
+def collect_emails(calendar, email_accounts):
     '''Retrieves a specified calendar user's email'''
-    emails = EmailAccounts.objects.filter(user=calendar.sb_user)
+    emails = email_accounts.objects.filter(user=calendar.sb_user)
 
     email_list = []
 
-    for e in emails:
-        email_list.append(e.email)
-    
-    return(email_list)
+    for email in emails:
+        email_list.append(email.email)
+
+    return email_list
 
 # Set root for this program to allow absolute paths
-root = Path(sys.argv[1])
+ROOT = Path(sys.argv[1])
 
 # Connect to the config file
-config = configparser.ConfigParser()
-config.read(Path(root.parent, 'config', 'rdrhc_calendar.cfg'))
+CONFIG = configparser.ConfigParser()
+CONFIG.read(Path(ROOT.parent, 'config', 'rdrhc_calendar.cfg'))
 
 # Setup Sentry & Logging
 logging.config.dictConfig({
@@ -177,15 +183,15 @@ logging.config.dictConfig({
             'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
         },
     },
-    'handlers': { 
-        'default': { 
+    'handlers': {
+        'default': {
             'level': 'INFO',
             'formatter': 'standard',
             'class': 'logging.StreamHandler',
         },
     },
-    'loggers': { 
-        '': { 
+    'loggers': {
+        '': {
             'handlers': ['default'],
             'level': 'INFO',
             'propagate': True,
@@ -193,62 +199,58 @@ logging.config.dictConfig({
     },
 })
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
-sentry_logging = LoggingIntegration(
-    level=logging.INFO,
-    event_level=logging.ERROR
-)
-sentry_sdk.init(
-    config.get('sentry', 'dsn'),
-    integrations=[sentry_logging]
-)
+sentry_sdk.init(CONFIG.get('sentry', 'dsn'))
 
 
-log.info('STARTING RDRHC CALENDAR GENERATOR')
+LOG.info('STARTING RDRHC CALENDAR GENERATOR')
 
 # Collect all the application configuration values
-app_config = collect_config(config)
+APP_CONFIG = collect_config(CONFIG)
 
 # Create a request header to make API calls
-headers = {
+HEADERS = {
     'user-agent': 'rdrhc-calendar',
-    'Authorization': 'Token {}'.format(app_config['api_token']),
+    'Authorization': 'Token {}'.format(APP_CONFIG['api_token']),
 }
 
 # Collect the Excel schedule files
-log.info('Retrieving the Excel Schedules')
-excel_files = retrieve.retrieve_schedules(app_config)
+LOG.info('Retrieving the Excel Schedules')
+EXCEL_FILES = retrieve.retrieve_schedules(APP_CONFIG)
 
 # Collect a list of all the user names
-log.info('Retrieving all calendar users')
-user_request = requests.get(
-    '{}users/'.format(app_config['api_url']),
-    headers=headers
+LOG.info('Retrieving all calendar users')
+USER_REQUEST = requests.get(
+    '{}users/'.format(APP_CONFIG['api_url']),
+    headers=HEADERS
 )
 
-if user_request.status_code >= 400:
+if USER_REQUEST.status_code >= 400:
     raise requests.ConnectionError(
-        'Unable to connect to API ({})'.format(app_config['api_url'])
+        'Unable to connect to API ({})'.format(APP_CONFIG['api_url'])
     )
 
-users = json.loads(user_request.text)
+USERS = json.loads(USER_REQUEST.text)
 
 # Set to hold any codes not in Django DB
-missing_codes = {
+MISSING_CODES = {
     'a': set(),
     'p': set(),
     't': set()
 }
 
 # Cycle through each user and process their schedule
-for user in users:
+for user in USERS:
     # Assemble the users schedule
-    log.info('Assembling schedule for {} (role = {})'.format(
-        user['schedule_name'], user['role']
-    ))
+    LOG.info(
+        'Assembling schedule for %s (role = %s)',
+        user['schedule_name'],
+        user['role']
+    )
 
-#     schedule = format.assemble_schedule(app_config, excel_files, user, ShiftCode, StatHoliday, Shift)
+    schedule = format_schedule.assemble_schedule(
+        APP_CONFIG, EXCEL_FILES, user, ShiftCode, StatHoliday, Shift)
 
 #     if schedule:
 #         # Upload the schedule data to the Django server
@@ -267,7 +269,7 @@ for user in users:
 
 #         # Email the user the calendar details
 #         notify.email_schedule(user, emails, app_config, schedule)
-        
+
 #         # Add the missing codes to the set
 #         missing_codes[user.role] = missing_codes[user.role].union(
 #             schedule.missing_upload
@@ -280,4 +282,4 @@ for user in users:
 # if missing_upload:
 #     notify.email_missing_codes(missing_upload, app_config)
 
-log.info('CALENDAR GENERATION COMPLETE')
+LOG.info('CALENDAR GENERATION COMPLETE')
