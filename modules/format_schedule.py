@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 # CLASSES
 class RawShift(object):
     """Holds the details for a user's specified shift details"""
-    
+
     def __init__(self, shift, date, comment):
         self.shift_code = shift
         self.start_date = date
@@ -39,7 +39,7 @@ class Schedule(object):
     """Holds all the users shifts and any noted modifications"""
 
     def __init__(
-        self, shifts, additions, deletions, changes, missing, null, 
+        self, shifts, additions, deletions, changes, missing, null,
         missing_upload
     ):
         self.shifts = shifts
@@ -59,13 +59,12 @@ class EmailShift(object):
         self.date = date
         self.msg = msg
 
-
 def get_formatted_date(date):
     """Converts Python date object into string (as yyyy-mmm-dd)"""
     day = date.strftime("%d")
-    
+
     month = date.strftime("%m")
-    
+
     if month == "01":
         month = "JAN"
     elif month == "02":
@@ -90,19 +89,19 @@ def get_formatted_date(date):
         month = "NOV"
     elif month == "12":
         month = "DEC"
-    
+
     year = date.strftime("%Y")
-    
+
     return ("{}-{}-{}".format(year, month, day))
 
 def generate_calendar(user, schedule, cal_loc):
     """Generates an .ics file from the extracted user schedule"""
-    
+
     log.info("Generating .ics calendar for %s" % user.name)
 
     # Generate initial calendar information
     lines = []
-    
+
     lines.append("BEGIN:VCALENDAR")
     lines.append("PRODID:-//StudyBuffalo.com//RDRHC Calendar//EN")
     lines.append("VERSION:2.0")
@@ -127,7 +126,7 @@ def generate_calendar(user, schedule, cal_loc):
     lines.append("RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU")
     lines.append("END:STANDARD")
     lines.append("END:VTIMEZONE")
-    
+
 	# Cycle through schedule and generate schedule events
     dt_stamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
 
@@ -141,7 +140,7 @@ def generate_calendar(user, schedule, cal_loc):
             comment = shift.comment
         except Exception:
             log.error(
-                "Unable to extract shift data to generate calendar", 
+                "Unable to extract shift data to generate calendar",
                 exc_info=True
             )
             start_date = "20010101"
@@ -181,7 +180,7 @@ def generate_calendar(user, schedule, cal_loc):
 
             lines.append("DTSTART;VALUE=DATE:%s" % start_date)
             lines.append("DTEND;VALUE=DATE:%s" % end_date)
-        
+
         lines.append("DTSTAMP:%s" % dt_stamp)
         lines.append("UID:%sT%s@studybuffalo.com-%s" % (start_date, start_time, i))
         lines.append("CREATED:%s" % dt_stamp)
@@ -234,7 +233,7 @@ def generate_calendar(user, schedule, cal_loc):
     log.debug("Folding lines greater than 75 characters long")
 
     folded = []
-    
+
     for line in lines:
         if len(line) > 75:
 
@@ -250,7 +249,7 @@ def generate_calendar(user, schedule, cal_loc):
                 # Add folded line
                 newLine = line[0:75]
                 folded.append(" " + newLine + "\n")
-                
+
                 # Generate new line and length
                 line = line[75:]
                 length = len(line)
@@ -273,7 +272,7 @@ def generate_calendar(user, schedule, cal_loc):
 
 def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col):
     """Returns an array of schedule_shift objects"""
-    
+
     # EXTRACT SCHEDULE DETAILS FROM EXCEL DOCUMENT
     log.info("Extracting schedule details for %s" % user.name)
 
@@ -365,17 +364,17 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
         if shift_codes != "" and re.match(r"\s+$", shift_codes) is None and date != "":
             # Split each shift code on spaces or slashes
             shift_codes = re.split(r"(?:\s|/)+", shift_codes)
-            
+
             # Remove any duplicate shift codes
             shift_codes = list(set(shift_codes))
 
             for code in shift_codes:
                 shifts.append(RawShift(code, date, comment))
-                
+
                 # Add pharmacist "X" shifts
                 if user.role == "p" and code[-1:].upper() == "X":
                     shifts.append(RawShift("X", date, ""))
-    
+
     # Sort the shifts by date
     # Note: should occur automatically, but just in case
     log.debug("Sorting shifts by date")
@@ -383,10 +382,10 @@ def extract_raw_schedule(book, sheet, user, index, row_start, row_end, date_col)
     sorted_shifts = sorted(shifts, key=lambda s: s.start_date)
 
     return sorted_shifts
-    
+
 def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defaults, Shift):
     """Takes the raw schedule and returns the required formatted objects"""
-    
+
     def collect_shift_codes(user, ShiftCode):
         """Takes a specific user and extracts the shift times"""
         log.debug("Collecting all the required shift codes for user")
@@ -405,15 +404,15 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
         log.debug("Combining user-specific and default shift codes")
 
         codes = []
-        
+
         for u_code in user_codes:
             codes.append(u_code)
-        
+
         # Add any default codes that don't have a user code already
         for d_code in default_codes:
             if not any(d_code.code == code.code for code in codes):
                 codes.append(d_code)
-        
+
         return codes
 
     def collect_stat_holidays(schedule, StatHoliday):
@@ -445,7 +444,7 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
         for holiday in stat_holidays:
             if date == holiday.date:
                 return True
-        
+
         return False
 
     def retrieve_old_schedule(user, Shift):
@@ -510,20 +509,20 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
 
     # Get shift codes/times for user
     shift_code_list = collect_shift_codes(user, ShiftCode)
-    
+
     # Get all the stat holidays for the date range of the raw_schedule
     stat_holidays = collect_stat_holidays(raw_schedule, StatHoliday)
-    
+
     # Assign start and end date/times to user's shifts
     schedule = []
     null_shifts = []
     missing_shifts = []
     missing_codes_for_upload = set()
-    
+
     for shift in raw_schedule:
         # Search for a shift match
         shift_match = False
-        
+
         # Record the day of the week
         try:
             dow = shift.start_date.weekday()
@@ -536,14 +535,14 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
             stat_match = is_stat(stat_holidays, shift.start_date)
         except Exception:
             log.error(
-                "Unable to determine if this is a stat holiday", 
+                "Unable to determine if this is a stat holiday",
                 exc_info=True
             )
             stat_match = False
 
         for code in shift_code_list:
 	        # If matched, find the proper day to base shift details on
-            
+
             if shift.shift_code == code.code:
                 shift_match = True
 
@@ -575,24 +574,24 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
 
                 if start_time:
                     # Shift has time, process as normal
-                    
+
                     # Convert the decimal hours duration to h, m, and s
                     hours = int(duration)
                     minutes = int((duration*60) % 60)
-                
+
                     start_datetime = datetime.combine(shift.start_date, start_time)
 
                     end_datetime = start_datetime + timedelta(
                         hours=hours,
                         minutes=minutes
                     )
-  
+
                     schedule.append(FormattedShift(
-                        shift.shift_code, start_datetime, end_datetime, 
+                        shift.shift_code, start_datetime, end_datetime,
                         shift.comment, code
                     ))
                 else:
-                    # Shift has no times - don't add to schedule and mark 
+                    # Shift has no times - don't add to schedule and mark
                     # it in the null shift list
                     msg = "{} - {}".format(
                         get_formatted_date(shift.start_date), shift.shift_code
@@ -618,13 +617,13 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
 
             # Add the missing code to the missing code set
             missing_codes_for_upload.add(shift.shift_code)
-                
+
             # Set default times
             if stat_match:
                 start_datetime = datetime.combine(
                     shift.start_date, defaults["stat_start"]
                 )
-                    
+
                 end_datetime = start_datetime + timedelta(
                     hours=defaults["stat_hours"],
                     minutes=defaults["stat_minutes"]
@@ -642,25 +641,25 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
                 start_datetime = datetime.combine(
                     shift.start_date, defaults["weekday_start"]
                 )
-                    
+
                 end_datetime = start_datetime + timedelta(
                     hours=defaults["weekday_hours"],
                     minutes=defaults["weekday_minutes"]
                 )
-  
+
             schedule.append(FormattedShift(
-                shift.shift_code, start_datetime, end_datetime, 
+                shift.shift_code, start_datetime, end_datetime,
                 shift.comment, None
             ))
 
-    
+
     # Determine the shift additions, deletions, and changes
     # Retrieve the old schedule
     old_schedule = retrieve_old_schedule(user, Shift)
-    
+
     # Generate a new schedule listing organized by date
     new_by_date = group_schedule_by_date(schedule)
-    
+
     # Check if there are any deletions or changes
     deletions = []
     changes = []
@@ -670,20 +669,20 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
 
         if old_date in new_by_date:
             new_shifts = new_by_date[old_date]
-            
+
             if len(old_shifts) == len(new_shifts):
                 for old in old_shifts:
                     for new in new_shifts:
                         if old.shift_code == new.shift_code:
                             shift_match.append(True)
 
-            # If the number of Trues equal length of old_shifts, 
+            # If the number of Trues equal length of old_shifts,
             # no changes occurred
             if len(shift_match) != len(old_shifts):
                 old_codes = "/".join(str(s.shift_code) for s in old_shifts)
                 new_codes = "/".join(str(s.shift_code) for s in new_shifts)
                 msg = "{} - {} changed to {}".format(
-                   get_formatted_date(old_date), 
+                   get_formatted_date(old_date),
                    old_codes,
                    new_codes
                 )
@@ -693,7 +692,7 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
             # Shift was deleted
             old_codes = "/".join(str(s.shift_code) for s in old_shifts)
             msg = "{} - {}".format(
-                get_formatted_date(old_date), 
+                get_formatted_date(old_date),
                 old_codes
             )
 
@@ -708,12 +707,12 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
         if new_date not in old_schedule:
             new_codes = "/".join(str(s.shift_code) for s in new_shifts)
             msg = "{} - {}".format(
-                get_formatted_date(new_date), 
+                get_formatted_date(new_date),
                 new_codes
             )
 
             additions.append(EmailShift(new_date, msg))
-    
+
     # Removes missing shifts not in the additions or changes lists
     # (user will have already been notified on these shifts)
     missing = []
@@ -742,7 +741,7 @@ def generate_formatted_schedule(user, raw_schedule, ShiftCode, StatHoliday, defa
 
     # Return all the required items to generate the calendar and emails
     return Schedule(
-        schedule, additions, deletions, changes, missing, null, 
+        schedule, additions, deletions, changes, missing, null,
         missing_codes_for_upload
     )
 
@@ -758,7 +757,7 @@ def return_column_index(sheet, user, name_row, col_start, col_end):
                 cell_name = str(sheet.cell(row=name_row, column=i).value).strip()
             elif user.role == "a" or user.role == "t":
                 cell_name = str(sheet.cell(name_row, i).value).strip()
-            
+
             if cell_name.upper() == user.schedule_name.upper():
                 index = i
                 break
@@ -819,7 +818,7 @@ def assemble_schedule(app_config, excel_files, user, ShiftCode, StatHoliday, Shi
     # If the user.index is found, can run rest of program
     if user_index:
         raw_schedule = extract_raw_schedule(
-            excel_book, excel_sheet, user, user_index, 
+            excel_book, excel_sheet, user, user_index,
             config["row_start"], config["row_end"], config["date_col"]
         )
 
