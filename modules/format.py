@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from django.db.models import Q
 import logging
 import openpyxl
 import re
