@@ -23,12 +23,12 @@ import configparser
 from datetime import datetime, timedelta
 import django
 import logging
-import logging.config
 from modules import format, notify, retrieve, upload
 import os
 import sys
 from unipath import Path
-from raven import Client
+import sentry_sdk
+from sentry_sdk.integrations.logging import LoggingIntegration
 
 def collect_config(config):
     """Collects and formats all the require configuration data"""
@@ -165,12 +165,14 @@ config = configparser.ConfigParser()
 config.read(Path(root.parent, "config", "rdrhc_calendar.cfg"))
 
 # Setup Sentry
-client = Client(config.get('sentry', 'dsn'))
-
-# Setup Logging
-log_config = Path(root.parent, "config", "rdrhc_calendar_logging.cfg")
-logging.config.fileConfig(log_config)
-log = logging.getLogger(__name__)
+sentry_logging = LoggingIntegration(
+    level=logging.DEBUG,
+    event_level=logging.ERROR
+)
+sentry_sdk.init(
+    config.get('sentry', 'dsn'),
+    integrations=[sentry_logging]
+)
 
 # Setup connection to the Django server
 django_path = config.get("django", "django_path")
@@ -181,6 +183,8 @@ sys.path.append(django_app_path)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
 django.setup()
+
+log = logging.getLogger(__name__)
 
 # pylint: disable=import-error
 from rdrhc_calendar.models import CalendarUser, ShiftCode, StatHoliday, Shift, MissingShiftCode
@@ -244,5 +248,3 @@ if missing_upload:
     notify.email_missing_codes(missing_upload, app_config)
 
 log.info("CALENDAR GENERATION COMPLETE")
-
-
