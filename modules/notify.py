@@ -9,6 +9,18 @@ import smtplib
 # Setup logger
 log = logging.getLogger(__name__)
 
+
+def collect_emails(calendar, email_accounts):
+    '''Retrieves a specified calendar user's email'''
+    emails = email_accounts.objects.filter(user=calendar.sb_user)
+
+    email_list = []
+
+    for email in emails:
+        email_list.append(email.email)
+
+    return email_list
+
 def email_welcome(user, emails, config):
     """Sends a welcome email to any new user"""
 
@@ -30,7 +42,7 @@ def email_welcome(user, emails, config):
             to_addresses.append(to_address)
 
         subject = "Welcome to Your New Online Schedule"
-        
+
         content = MIMEMultipart('alternative')
         content['From'] = from_address
         content['To'] = ",".join(to_addresses)
@@ -41,7 +53,7 @@ def email_welcome(user, emails, config):
 
         # Collects text welcome email from template file
         textLoc = config["email"]["welcome_text"]
-        
+
         try:
             with open(textLoc, "r") as textFile:
                 text = textFile.read().replace("\n", "\r\n")
@@ -54,7 +66,7 @@ def email_welcome(user, emails, config):
 
         # Collects html welcome email from template file
         htmlLoc = config["email"]["welcome_html"]
-            
+
         try:
             with open(htmlLoc, "r") as htmlFile:
                 html = htmlFile.read()
@@ -68,10 +80,10 @@ def email_welcome(user, emails, config):
         # Assemble an HTML and plain text version
         textBody = MIMEText(text, 'plain')
         htmlBody = MIMEText(html, 'html')
-        
+
         content.attach(textBody)
         content.attach(htmlBody)
-        
+
         # Attempt to send email
         try:
             if config["debug"]["email_console"]:
@@ -98,7 +110,7 @@ def email_welcome(user, emails, config):
 def email_schedule(user, emails, config, schedule):
     """Emails user with any schedule changes"""
 
-    if (len(schedule.additions) or len(schedule.deletions) or 
+    if (len(schedule.additions) or len(schedule.deletions) or
         len(schedule.changes) or len(schedule.missing) or len(schedule.null)):
         log.debug("User qualifies for an update email to be sent")
 
@@ -106,7 +118,7 @@ def email_schedule(user, emails, config, schedule):
         log.debug("Opening the email templates")
 
         text_loc = config["email"]["update_text"]
-        
+
         try:
             with open(text_loc, "r") as textFile:
                 text = textFile.read().replace("\n", "\r\n")
@@ -121,7 +133,7 @@ def email_schedule(user, emails, config, schedule):
 
         # Opens the update email (html) file
         html_loc = config["email"]["update_html"]
-        
+
         try:
             with open(html_loc, "r") as htmlFile:
                 html = htmlFile.read()
@@ -133,7 +145,7 @@ def email_schedule(user, emails, config, schedule):
                 exc_info=True
             )
             html = None
-        
+
         # Set the user name
         text = text.replace("{{ user_name }}", user.name)
         html = html.replace("{{ user_name }}", user.name)
@@ -173,7 +185,7 @@ def email_schedule(user, emails, config, schedule):
             for d in schedule.deletions:
                 deletions_text.append(" - {}".format(d.msg))
                 deletions_html.append("<li>{}</li>".format(d.msg))
-                
+
             text = text.replace("{{ deletions }}", "\r\n".join(deletions_text))
             html = html.replace("{{ deletions }}", "\r\n".join(deletions_html))
 
@@ -197,7 +209,7 @@ def email_schedule(user, emails, config, schedule):
             for c in schedule.changes:
                 changes_text.append(" - {}".format(c.msg))
                 changes_html.append("<li>{}</li>".format(c.msg))
-                
+
             text = text.replace("{{ changes }}", "\r\n".join(changes_text))
             html = html.replace("{{ changes }}", "\r\n".join(changes_html))
 
@@ -207,7 +219,7 @@ def email_schedule(user, emails, config, schedule):
         else:
             # No changes, remove entire section
             regex = r"{% block changes %}.*{% block changes %}"
-            
+
             text = re.sub(regex, "", text, flags=re.S)
             html = re.sub(regex, "", html, flags=re.S)
 
@@ -247,7 +259,7 @@ def email_schedule(user, emails, config, schedule):
             for m in schedule.missing:
                 missing_text.append(" - {}".format(m.msg))
                 missing_html.append("<li>{}</li>".format(m.msg))
-                
+
             text = text.replace("{{ missing }}", "\r\n".join(missing_text))
             html = html.replace("{{ missing }}", "\r\n".join(missing_html))
 
@@ -257,7 +269,7 @@ def email_schedule(user, emails, config, schedule):
         else:
             # No missing shifts, remove entire section
             regex = r"{% block missing %}.*{% block missing %}"
-            
+
             text = re.sub(regex, "", text, flags=re.S)
             html = re.sub(regex, "", html, flags=re.S)
 
@@ -271,7 +283,7 @@ def email_schedule(user, emails, config, schedule):
             for n in schedule.null:
                 null_text.append(" - {}".format(n.msg))
                 null_html.append("<li>{}</li>".format(n.msg))
-                
+
             text = text.replace("{{ excluded }}", "\r\n".join(null_text))
             html = html.replace("{{ excluded }}", "\r\n".join(null_html))
 
@@ -281,7 +293,7 @@ def email_schedule(user, emails, config, schedule):
         else:
             # No excluded shifts, remove entire section
             regex = r"{% block excluded %}.*{% block excluded %}"
-            
+
             text = re.sub(regex, "", text, flags=re.S)
             html = re.sub(regex, "", html, flags=re.S)
 
@@ -290,7 +302,7 @@ def email_schedule(user, emails, config, schedule):
         text = text.replace("{{ calendar_name }}", calendar_name)
         html = html.replace("{{ calendar_name }}", calendar_name)
 
-        
+
         # Setup email settings
         log.debug("Setting up the other email settings")
 
@@ -309,7 +321,7 @@ def email_schedule(user, emails, config, schedule):
             to_addresses.append(to_address)
 
         subject = "RDRHC Schedule Changes"
-        
+
         content = MIMEMultipart('alternative')
         content['From'] = from_address
         content['To'] = ",".join(to_addresses)
@@ -321,10 +333,10 @@ def email_schedule(user, emails, config, schedule):
         # Construct the email body
         textBody = MIMEText(text, 'plain')
         htmlBody = MIMEText(html, 'html')
-        
+
         content.attach(textBody)
         content.attach(htmlBody)
-        
+
         # Send the email
         try:
             if config["debug"]["email_console"]:
@@ -352,7 +364,7 @@ def email_missing_codes(missing_codes, config):
     log.debug("Opening the email templates")
 
     text_loc = config["email"]["missing_codes_text"]
-        
+
     try:
         with open(text_loc, "r") as textFile:
             text = textFile.read().replace("\n", "\r\n")
@@ -367,7 +379,7 @@ def email_missing_codes(missing_codes, config):
 
     # Opens the notification (text) template
     html_loc = config["email"]["missing_codes_html"]
-        
+
     try:
         with open(html_loc, "r") as htmlFile:
             html = htmlFile.read()
@@ -379,7 +391,7 @@ def email_missing_codes(missing_codes, config):
             exc_info=True
         )
         html = None
-    
+
     # Add all the missing shift codes to the email
     log.debug("Formatting missing shift codes for email")
 
@@ -409,7 +421,7 @@ def email_missing_codes(missing_codes, config):
     to_address = formataddr((to_name, to_email))
 
     subject = "RDRHC Calendar Missing Shift Codes"
-        
+
     content = MIMEMultipart('alternative')
     content['From'] = from_address
     content['To'] = to_address
@@ -418,10 +430,10 @@ def email_missing_codes(missing_codes, config):
     # Construct the email body
     text_body = MIMEText(text, 'plain')
     html_body = MIMEText(html, 'html')
-        
+
     content.attach(text_body)
     content.attach(html_body)
-        
+
     # Send the email
     try:
         if config["debug"]["email_console"]:
@@ -436,3 +448,10 @@ def email_missing_codes(missing_codes, config):
             server.quit()
     except Exception:
         log.error("Unable to send missing shift code email", exc_info=True)
+
+def notify_user(user, app_config, schedule):
+    # If this is the first schedule, email the welcome details
+    notify.email_welcome(user, emails, APP_CONFIG)
+
+    # Email the user the calendar details
+    notify.email_schedule(user, emails, APP_CONFIG, schedule)

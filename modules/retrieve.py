@@ -19,7 +19,7 @@ def get_date(tz_string):
 
     return today.strftime('%Y-%m-%d')
 
-def retrieve_schedules(config):
+def retrieve_schedule_file_paths(config):
     """Creates the path to the schedules from supplied config file."""
     schedule_loc = config['excel']['schedule_loc']
 
