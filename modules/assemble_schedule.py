@@ -5,12 +5,23 @@ import json
 import logging
 
 import requests
-from unipath import Path
 
 from modules.custom_exceptions import ScheduleError
 from modules.extract_schedule import generate_raw_schedule
 
+
 LOG = logging.getLogger(__name__)
+
+class RawShift():
+    """Holds the details for a user's specified shift details"""
+
+    def __init__(self, shift, date, comment):
+        self.shift_code = shift
+        self.start_date = date
+        self.comment = comment
+
+    def __str__(self):
+        return "{} ({})".format(self.shift_code, self.start_date)
 
 class FormattedShift():
     """Holds expanded details on a user's specified shift"""
@@ -31,8 +42,8 @@ class Schedule():
     """Holds all the users shifts and any noted modifications"""
 
     def __init__(
-        self, shifts, additions, deletions, changes, missing, null,
-        missing_upload
+            self, shifts, additions, deletions, changes, missing, null,
+            missing_upload
     ):
         self.shifts = shifts
         self.additions = additions
@@ -95,65 +106,98 @@ def retrieve_shift_codes(app_config, user_id):
     #     if not any(d_code.code == code.code for code in codes):
     #         codes.append(d_code)
 
-    return codes
-
-def retrieve_stat_holidays(schedule):
+def retrieve_stat_holidays(app_config, schedule):
     """Retrieves any stat holidays occuring between schedule dates."""
+    LOG.debug('Retrieving stat holiday information.')
+
     try:
-        first_day = schedule[0].start_date
+        first_day = schedule[0].start_date,
         last_day = schedule[-1].start_date
     except IndexError:
         # Known error when a user has no shifts
         first_day = datetime(2001, 1, 1)
         last_day = datetime(2020, 12, 31)
-    except Exception:
-        LOG.warn(
-            'Unable to retrieve statutory holidys based on schedule dates',
-            exc_info=True
-        )
-        first_day = datetime(2001, 1, 1)
-        last_day = datetime(2020, 12, 31)
 
-    stat_holidays = StatHoliday.objects.all().filter(
-        Q(date__gte=first_day) & Q(date__lte=last_day)
+    api_url = '{}stat-holidays/?date_start={}&date_end={}/'.format(
+        app_config['api_headers'], first_day, last_day
     )
 
-    return stat_holidays
+    stat_holidays_response = requests.get(
+        api_url,
+        headers=app_config['api_headers']
+    )
+
+    if stat_holidays_response.status_code >= 400:
+        raise ScheduleError(
+            (
+                'Unable to connect to API ({}) and retrieve '
+                'stat holidays.'
+            ).format(api_url)
+        )
+
+    return json.loads(stat_holidays_response.text)
+
+    # stat_holidays = StatHoliday.objects.all().filter(
+    #     Q(date__gte=first_day) & Q(date__lte=last_day)
+    # )
+
+def retrieve_old_schedule(app_config, user_id):
+    """Retrieves the user's previous schedule from the database"""
+
+    api_url = '{}shifts/{}/'.format(
+        app_config['api_headers'], user_id
+    )
+
+    shifts_response = requests.get(
+        api_url,
+        headers=app_config['api_headers']
+    )
+
+    if shifts_response.status_code >= 400:
+        raise ScheduleError(
+            (
+                'Unable to connect to API ({}) and retrieve '
+                'users old shifts.'
+            ).format(api_url)
+        )
+
+    shifts = json.loads(shifts_response.text)
+
+    old_schedule = {}
+
+    for shift in shifts:
+        key_match = False
+        shift_date = shift.date
+
+        for key in old_schedule:
+            if shift_date == key:
+                key_match = True
+
+                # Do not add 'X' shifts
+                if shift.text_shift_code != 'X':
+                    # Append this shift to this key
+                    old_schedule[shift_date].append(
+                        RawShift(shift.text_shift_code, shift_date, '')
+                    )
+
+        if key_match is False:
+            # Do not add 'X' shifts
+            if shift.text_shift_code != 'X':
+                # Append a new key to the groupings
+                old_schedule[shift_date] = [
+                    RawShift(shift.text_shift_code, shift_date, '')
+                ]
+
+    return old_schedule
+
+    # shifts = Shift.objects.all().filter(
+    #     sb_user=user.sb_user
+    # ).order_by('date')
+
 
 def get_formatted_date(date):
     """Converts Python date object into string (as yyyy-mmm-dd)"""
-    day = date.strftime("%d")
-
-    month = date.strftime("%m")
-
-    if month == "01":
-        month = "JAN"
-    elif month == "02":
-        month = "FEB"
-    elif month == "03":
-        month = "MAR"
-    elif month == "04":
-        month = "APR"
-    elif month == "05":
-        month = "MAY"
-    elif month == "06":
-        month = "JUN"
-    elif month == "07":
-        month = "JUL"
-    elif month == "08":
-        month = "AUG"
-    elif month == "09":
-        month = "SEP"
-    elif month == "10":
-        month = "OCT"
-    elif month == "11":
-        month = "NOV"
-    elif month == "12":
-        month = "DEC"
-
-    year = date.strftime("%Y")
-
-    return ("{}-{}-{}".format(year, month, day))
+    return date.strftime('%Y-%b-%d').upper()
 
 def generate_formatted_schedule(user, app_config, raw_schedule):
     """Takes the raw schedule and returns the required formatted objects"""
@@ -166,37 +210,6 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
                 return True
 
         return False
-
-    def retrieve_old_schedule(user, Shift):
-        """Retrieves the user's previous schedule from the database"""
-        shifts = Shift.objects.all().filter(sb_user=user.sb_user).order_by('date')
-
-        old_schedule = {}
-
-        for shift in shifts:
-            key_match = False
-            shift_date = shift.date
-
-            for key in old_schedule:
-                if shift_date == key:
-                    key_match = True
-
-                    # Do not add 'X' shifts
-                    if shift.text_shift_code != 'X':
-                        # Append this shift to this key
-                        old_schedule[shift_date].append(
-                            RawShift(shift.text_shift_code, shift_date, '')
-                        )
-
-            if key_match == False:
-                # Do not add 'X' shifts
-                if shift.text_shift_code != 'X':
-                    # Append a new key to the groupings
-                    old_schedule[shift_date] = [
-                        RawShift(shift.text_shift_code, shift_date, '')
-                    ]
-
-        return old_schedule
 
     def group_schedule_by_date(schedule):
         """Groups schedule shifts by date"""
@@ -217,7 +230,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
                             RawShift(shift.shift_code, shift_date, '')
                         )
 
-            if key_match == False:
+            if key_match is False:
                 # Do not add 'X' shifts
                 if shift.shift_code != 'X':
                     # Append a new key to the groupings
@@ -231,7 +244,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
     shift_code_list = retrieve_shift_codes(app_config, user['id'])
 
     # Get all the stat holidays for the date range of the raw_schedule
-    stat_holidays = retrieve_stat_holidays(raw_schedule)
+    stat_holidays = retrieve_stat_holidays(app_config, raw_schedule)
 
     # Assign start and end date/times to user's shifts
     schedule = []
@@ -244,24 +257,13 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
         shift_match = False
 
         # Record the day of the week
-        try:
-            dow = shift.start_date.weekday()
-        except Exception:
-            LOG.error('Unable to determine day of week', exc_info=True)
-            dow = 0
+        dow = shift.start_date.weekday()
 
         # Check if this is a stat holiday
-        try:
-            stat_match = is_stat(stat_holidays, shift.start_date)
-        except Exception:
-            LOG.error(
-                'Unable to determine if this is a stat holiday',
-                exc_info=True
-            )
-            stat_match = False
+        stat_match = is_stat(stat_holidays, shift.start_date)
 
         for code in shift_code_list:
-	        # If matched, find the proper day to base shift details on
+            # If matched, find the proper day to base shift details on
 
             if shift.shift_code == code.code:
                 shift_match = True
@@ -299,7 +301,9 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
                     hours = int(duration)
                     minutes = int((duration*60) % 60)
 
-                    start_datetime = datetime.combine(shift.start_date, start_time)
+                    start_datetime = datetime.combine(
+                        shift.start_date, start_time
+                    )
 
                     end_datetime = start_datetime + timedelta(
                         hours=hours,
@@ -325,7 +329,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
                 break
 
         # If no shift match, provide default values
-        if shift_match == False:
+        if shift_match is False:
             # Add missing shift to the Missing shift list
             msg = '{} - {}'.format(
                 get_formatted_date(shift.start_date), shift.shift_code
@@ -377,7 +381,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
 
     # Determine the shift additions, deletions, and changes
     # Retrieve the old schedule
-    old_schedule = retrieve_old_schedule(user, Shift)
+    old_schedule = retrieve_old_schedule(app_config, user)
 
     # Generate a new schedule listing organized by date
     new_by_date = group_schedule_by_date(schedule)
@@ -404,9 +408,9 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
                 old_codes = '/'.join(str(s.shift_code) for s in old_shifts)
                 new_codes = '/'.join(str(s.shift_code) for s in new_shifts)
                 msg = '{} - {} changed to {}'.format(
-                   get_formatted_date(old_date),
-                   old_codes,
-                   new_codes
+                    get_formatted_date(old_date),
+                    old_codes,
+                    new_codes
                 )
 
                 changes.append(EmailShift(old_date, msg))
@@ -439,27 +443,27 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
     # (user will have already been notified on these shifts)
     missing = []
 
-    for m in missing_shifts:
-        for c in changes:
-            if m.date == c.date:
-                missing.append(m)
+    for missing_shift in missing_shifts:
+        for change in changes:
+            if missing_shift.date == change.date:
+                missing.append(missing_shift)
 
-        for a in additions:
-            if m.date == a.date:
-                missing.append(m)
+        for addition in additions:
+            if missing_shift.date == addition.date:
+                missing.append(missing_shift)
 
     null = []
 
     # Removes null shifts not in the additions or changes lists
     # (user will have already been notified on these shifts)
-    for n in null_shifts:
-        for c in changes:
-            if n.date == c.date:
-                null.append(n)
+    for null_shift in null_shifts:
+        for change in changes:
+            if null_shift.date == change.date:
+                null.append(null_shift)
 
-        for a in additions:
-            if n.date == a.date:
-                null.append(n)
+        for addition in additions:
+            if null_shift.date == addition.date:
+                null.append(null_shift)
 
     # Return all the required items to generate the calendar and emails
     return Schedule(
