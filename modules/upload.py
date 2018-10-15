@@ -1,9 +1,11 @@
+"""Functions to handle upload to the database."""
+
 import logging
 
 # Setup logger
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
-def update_db(user, schedule, Shift):
+def update_schedule_database(user, schedule):
     """Uploads user schedule to Django Database"""
 
     # Remove the user's old schedule
@@ -19,7 +21,7 @@ def update_db(user, schedule, Shift):
 
     # Upload the new schedule
     log.debug("Uploading the new shifts for user")
-    
+
     for s in schedule:
         upload = Shift(
             sb_user=user.sb_user,
@@ -38,9 +40,9 @@ def update_db(user, schedule, Shift):
                 exc_info=True
             )
 
-def update_missing_codes(missing_codes, MissingShiftCode):
+def update_missing_codes_database(missing_codes):
     """Uploads any new missing shift codes"""
-    log.debug("Checking for missing shift codes")
+    LOG.debug("Checking for missing shift codes")
 
     new_codes = []
 
@@ -55,7 +57,7 @@ def update_missing_codes(missing_codes, MissingShiftCode):
                 # If this is a new code, record it to email owner
                 if missing_code:
                     log.debug("New code to upload: {}".format(code))
-                
+
                     new_codes.append("{} - {}".format(role, code))
 
     return new_codes
