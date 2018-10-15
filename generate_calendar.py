@@ -44,14 +44,12 @@ APP_CONFIG = assemble_app_configuration_details(ROOT)
 
 # Setup Sentry & Logging
 logging.config.dictConfig(LOGGING_DICT)
-
 LOG = logging.getLogger(__name__)
 
 sentry_sdk.init(APP_CONFIG['sentry_dsn'])
 
 
 LOG.info('STARTING RDRHC CALENDAR GENERATOR')
-
 
 # Collect the Excel schedule files
 LOG.info('Retrieving the Excel Schedules')

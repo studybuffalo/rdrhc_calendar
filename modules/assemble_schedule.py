@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import json
 import logging
 
+from decimal import Decimal
 import requests
 
 from modules.custom_exceptions import ScheduleError
@@ -81,45 +82,54 @@ def retrieve_shift_codes(app_config, user_id):
             ).format(api_url)
         )
 
-    return json.loads(shift_code_response.text)
+    shift_codes = json.loads(shift_code_response.text)
 
-    # Collect the user-specific codes
-    # user_codes = ShiftCode.objects.filter(
-    #     Q(role=user.role) & Q(sb_user=user.sb_user)
-    # )
+    for index, code in enumerate(shift_codes):
+        date_keys = [
+            'monday_start',
+            'tuesday_start',
+            'wednesday_start',
+            'thursday_start',
+            'friday_start',
+            'saturday_start',
+            'sunday_start',
+            'stat_start',
+        ]
+        decimal_keys = [
+            'monday_duration',
+            'tuesday_duration',
+            'wednesday_duration',
+            'thursday_duration',
+            'friday_duration',
+            'saturday_duration',
+            'sunday_duration',
+            'stat_duration',
+        ]
 
-    # # Collect the default codes (i.e. no user)
-    # default_codes = ShiftCode.objects.filter(
-    #     Q(role=user.role) & Q(sb_user__isnull=True)
-    # )
+        for key in date_keys:
+            shift_codes[index][key] = datetime.strptime(
+                code[key], '%H:%M:%S'
+            ).time()
 
-    # Add all the user_codes into the codes list
-    # LOG.debug('Combining user-specific and default shift codes')
+        for key in decimal_keys:
+            shift_codes[index][key] = Decimal(code[key])
 
-    # codes = []
-
-    # for u_code in user_codes:
-    #     codes.append(u_code)
-
-    # # Add any default codes that don't have a user code already
-    # for d_code in default_codes:
-    #     if not any(d_code.code == code.code for code in codes):
-    #         codes.append(d_code)
+    return shift_codes
 
 def retrieve_stat_holidays(app_config, schedule):
     """Retrieves any stat holidays occuring between schedule dates."""
     LOG.debug('Retrieving stat holiday information.')
 
     try:
-        first_day = schedule[0].start_date,
-        last_day = schedule[-1].start_date
+        first_day = str(schedule[0].start_date)
+        last_day = str(schedule[-1].start_date)
     except IndexError:
         # Known error when a user has no shifts
         first_day = datetime(2001, 1, 1)
-        last_day = datetime(2020, 12, 31)
+        last_day = datetime(2025, 12, 31)
 
-    api_url = '{}stat-holidays/?date_start={}&date_end={}/'.format(
-        app_config['api_headers'], first_day, last_day
+    api_url = '{}stat-holidays/?date_start={}&date_end={}'.format(
+        app_config['api_url'], first_day, last_day
     )
 
     stat_holidays_response = requests.get(
@@ -135,17 +145,20 @@ def retrieve_stat_holidays(app_config, schedule):
             ).format(api_url)
         )
 
-    return json.loads(stat_holidays_response.text)
+    stat_holidays = []
 
-    # stat_holidays = StatHoliday.objects.all().filter(
-    #     Q(date__gte=first_day) & Q(date__lte=last_day)
-    # )
+    for holiday_date in enumerate(json.loads(stat_holidays_response.text)):
+        stat_holidays.append(
+            datetime.strptime(holiday_date, '%Y-%m-%d')
+        )
+
+    return stat_holidays
 
 def retrieve_old_schedule(app_config, user_id):
     """Retrieves the user's previous schedule from the database"""
 
     api_url = '{}shifts/{}/'.format(
-        app_config['api_headers'], user_id
+        app_config['api_url'], user_id
     )
 
     shifts_response = requests.get(
@@ -167,33 +180,28 @@ def retrieve_old_schedule(app_config, user_id):
 
     for shift in shifts:
         key_match = False
-        shift_date = shift.date
+        shift_date = shift['date']
 
         for key in old_schedule:
             if shift_date == key:
                 key_match = True
 
                 # Do not add 'X' shifts
-                if shift.text_shift_code != 'X':
+                if shift['text_shift_code'] != 'X':
                     # Append this shift to this key
                     old_schedule[shift_date].append(
-                        RawShift(shift.text_shift_code, shift_date, '')
+                        RawShift(shift['text_shift_code'], shift_date, '')
                     )
 
         if key_match is False:
             # Do not add 'X' shifts
-            if shift.text_shift_code != 'X':
+            if shift['text_shift_code'] != 'X':
                 # Append a new key to the groupings
                 old_schedule[shift_date] = [
-                    RawShift(shift.text_shift_code, shift_date, '')
+                    RawShift(shift['text_shift_code'], shift_date, '')
                 ]
 
     return old_schedule
-
-    # shifts = Shift.objects.all().filter(
-    #     sb_user=user.sb_user
-    # ).order_by('date')
-
 
 def get_formatted_date(date):
     """Converts Python date object into string (as yyyy-mmm-dd)"""
@@ -206,7 +214,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
         """Determines if the date is a stat holiday or not"""
 
         for holiday in stat_holidays:
-            if date == holiday.date:
+            if date == holiday:
                 return True
 
         return False
@@ -241,7 +249,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
         return groupings
 
     # Get shift codes/times for user
-    shift_code_list = retrieve_shift_codes(app_config, user['id'])
+    shift_code_list = retrieve_shift_codes(app_config, user['sb_user'])
 
     # Get all the stat holidays for the date range of the raw_schedule
     stat_holidays = retrieve_stat_holidays(app_config, raw_schedule)
@@ -265,34 +273,34 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
         for code in shift_code_list:
             # If matched, find the proper day to base shift details on
 
-            if shift.shift_code == code.code:
+            if shift.shift_code == code['code']:
                 shift_match = True
 
                 # Apply proper start time and duration
                 if stat_match:
-                    start_time = code.stat_start
-                    duration = code.stat_duration
+                    start_time = code['stat_start']
+                    duration = code['stat_duration']
                 elif dow == 0:
-                    start_time = code.monday_start
-                    duration = code.monday_duration
+                    start_time = code['monday_start']
+                    duration = code['monday_duration']
                 elif dow == 1:
-                    start_time = code.tuesday_start
-                    duration = code.tuesday_duration
+                    start_time = code['tuesday_start']
+                    duration = code['tuesday_duration']
                 elif dow == 2:
-                    start_time = code.wednesday_start
-                    duration = code.wednesday_duration
+                    start_time = code['wednesday_start']
+                    duration = code['wednesday_duration']
                 elif dow == 3:
-                    start_time = code.thursday_start
-                    duration = code.thursday_duration
+                    start_time = code['thursday_start']
+                    duration = code['thursday_duration']
                 elif dow == 4:
-                    start_time = code.friday_start
-                    duration = code.friday_duration
+                    start_time = code['friday_start']
+                    duration = code['friday_duration']
                 elif dow == 5:
-                    start_time = code.saturday_start
-                    duration = code.saturday_duration
+                    start_time = code['saturday_start']
+                    duration = code['saturday_duration']
                 elif dow == 6:
-                    start_time = code.sunday_start
-                    duration = code.sunday_duration
+                    start_time = code['sunday_start']
+                    duration = code['sunday_duration']
 
                 if start_time:
                     # Shift has time, process as normal
@@ -381,7 +389,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
 
     # Determine the shift additions, deletions, and changes
     # Retrieve the old schedule
-    old_schedule = retrieve_old_schedule(app_config, user)
+    old_schedule = retrieve_old_schedule(app_config, user['id'])
 
     # Generate a new schedule listing organized by date
     new_by_date = group_schedule_by_date(schedule)
