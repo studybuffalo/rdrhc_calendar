@@ -19,19 +19,20 @@
     THE COPYRIGHT HOLDERS.
 """
 
-import sys
-
 import configparser
 from datetime import datetime, timedelta
 import json
 import logging
 import logging.config
+import sys
+
 import requests
 import sentry_sdk
 from unipath import Path
 
-
-from modules import format_schedule, notify, retrieve, upload
+from modules import notify, retrieve, upload
+from modules.assemble_schedule import assemble_schedule
+from modules.custom_exceptions import ScheduleError
 
 
 def collect_config(config):
@@ -80,7 +81,10 @@ def collect_config(config):
 
     return {
         'api_url': config.get('api', 'url'),
-        'api_token': config.get('api', 'token'),
+        'api_headers': {
+            'user-agent': 'rdrhc-calendar',
+            'Authorization': 'Token {}'.format(config.get('api', 'token')),
+        },
         'timezone': config.get('localization', 'timezone'),
         'excel': {
             'schedule_loc': config.get('schedules', 'save_location'),
@@ -209,29 +213,23 @@ LOG.info('STARTING RDRHC CALENDAR GENERATOR')
 # Collect all the application configuration values
 APP_CONFIG = collect_config(CONFIG)
 
-# Create a request header to make API calls
-HEADERS = {
-    'user-agent': 'rdrhc-calendar',
-    'Authorization': 'Token {}'.format(APP_CONFIG['api_token']),
-}
-
 # Collect the Excel schedule files
 LOG.info('Retrieving the Excel Schedules')
 EXCEL_FILES = retrieve.retrieve_schedules(APP_CONFIG)
 
 # Collect a list of all the user names
 LOG.info('Retrieving all calendar users')
-USER_REQUEST = requests.get(
+USER_RESPONSE = requests.get(
     '{}users/'.format(APP_CONFIG['api_url']),
-    headers=HEADERS
+    headers=APP_CONFIG['api_headers'],
 )
 
-if USER_REQUEST.status_code >= 400:
+if USER_RESPONSE.status_code >= 400:
     raise requests.ConnectionError(
         'Unable to connect to API ({})'.format(APP_CONFIG['api_url'])
     )
 
-USERS = json.loads(USER_REQUEST.text)
+USERS = json.loads(USER_RESPONSE.text)
 
 # Set to hold any codes not in Django DB
 MISSING_CODES = {
@@ -249,8 +247,18 @@ for user in USERS:
         user['role']
     )
 
-    schedule = format_schedule.assemble_schedule(
-        APP_CONFIG, EXCEL_FILES, user, ShiftCode, StatHoliday, Shift)
+    try:
+        schedule = assemble_schedule(APP_CONFIG, EXCEL_FILES, user)
+    except ScheduleError:
+        LOG.exception(
+            'Unable to assemble schedule for %s (role = %s)',
+            user['schedule_name'],
+            user['role']
+        )
+        schedule = None
+
+    if schedule:
+        pass
 
 #     if schedule:
 #         # Upload the schedule data to the Django server
