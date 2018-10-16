@@ -13,17 +13,6 @@ from modules.extract_schedule import generate_raw_schedule
 
 LOG = logging.getLogger(__name__)
 
-class RawShift():
-    """Holds the details for a user's specified shift details"""
-
-    def __init__(self, shift, date, comment):
-        self.shift_code = shift
-        self.start_date = date
-        self.comment = comment
-
-    def __str__(self):
-        return "{} ({})".format(self.shift_code, self.start_date)
-
 class FormattedShift():
     """Holds expanded details on a user's specified shift"""
 
@@ -189,17 +178,19 @@ def retrieve_old_schedule(app_config, user_id):
                 # Do not add 'X' shifts
                 if shift['text_shift_code'] != 'X':
                     # Append this shift to this key
-                    old_schedule[shift_date].append(
-                        RawShift(shift['text_shift_code'], shift_date, '')
-                    )
+                    old_schedule[shift_date].append({
+                        'shift_code': shift['text_shift_code'],
+                        'start_date': shift_date
+                    })
 
         if key_match is False:
             # Do not add 'X' shifts
             if shift['text_shift_code'] != 'X':
                 # Append a new key to the groupings
-                old_schedule[shift_date] = [
-                    RawShift(shift['text_shift_code'], shift_date, '')
-                ]
+                old_schedule[shift_date] = [{
+                    'shift_code': shift['text_shift_code'],
+                    'start_date': shift_date
+                }]
 
     return old_schedule
 
@@ -230,17 +221,19 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
                     # Do not add 'X' shifts
                     if shift.shift_code != 'X':
                         # Append this shift to this key
-                        groupings[shift_date].append(
-                            RawShift(shift.shift_code, shift_date, '')
-                        )
+                        groupings[shift_date].append({
+                            'shift_code': shift.shift_code,
+                            'start_date': shift_date
+                        })
 
             if key_match is False:
                 # Do not add 'X' shifts
                 if shift.shift_code != 'X':
                     # Append a new key to the groupings
-                    groupings[shift_date] = [
-                        RawShift(shift.shift_code, shift_date, '')
-                    ]
+                    groupings[shift_date] = [{
+                        'shift_code': shift.shift_code,
+                        'start_date': shift_date
+                    }]
 
         return groupings
 
@@ -418,7 +411,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
                 changes.append(EmailShift(old_date, msg))
         else:
             # Shift was deleted
-            old_codes = '/'.join(str(s.shift_code) for s in old_shifts)
+            old_codes = '/'.join(str(s['shift_code']) for s in old_shifts)
             msg = '{} - {}'.format(old_date, old_codes)
 
             deletions.append(EmailShift(old_date, msg))
@@ -430,7 +423,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
         shift_match = []
 
         if new_date not in old_schedule:
-            new_codes = '/'.join(str(s.shift_code) for s in new_shifts)
+            new_codes = '/'.join(str(s['shift_code']) for s in new_shifts)
             msg = '{} - {}'.format(new_date.strftime('%Y-%m-%d'), new_codes)
 
             additions.append(EmailShift(new_date, msg))

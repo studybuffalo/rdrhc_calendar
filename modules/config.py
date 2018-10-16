@@ -3,7 +3,6 @@
 
 import configparser
 from datetime import datetime, timedelta
-from unipath import Path
 
 
 def assemble_app_configuration_details(config_path):
