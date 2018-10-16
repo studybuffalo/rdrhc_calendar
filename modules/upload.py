@@ -71,18 +71,18 @@ def update_missing_codes_database(missing_codes):
 
     new_codes = []
 
-    for role, code_set in missing_codes.items():
-        for code in code_set:
-            if code:
-                retrieved_code, missing_code = MissingShiftCode.objects.get_or_create(
-                    code=code,
-                    role=role
-                )
+    # for role, code_set in missing_codes.items():
+    #     for code in code_set:
+    #         if code:
+                # retrieved_code, missing_code = MissingShiftCode.objects.get_or_create(
+                #     code=code,
+                #     role=role
+                # )
 
-                # If this is a new code, record it to email owner
-                if missing_code:
-                    LOG.debug("New code to upload: {}".format(code))
+                # # If this is a new code, record it to email owner
+                # if missing_code:
+                #     LOG.debug("New code to upload: {}".format(code))
 
-                    new_codes.append("{} - {}".format(role, code))
+                #     new_codes.append("{} - {}".format(role, code))
 
     return new_codes
