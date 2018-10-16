@@ -29,11 +29,11 @@ from unipath import Path
 from modules.config import assemble_app_configuration_details, LOGGING_DICT
 from modules.manager import run_program
 
-# Set root for this program to allow absolute paths
-ROOT = Path(sys.argv[1])
+# Determine the path to the config file
+CONFIG_PATH = Path(sys.argv[1])
 
 # Collect all the application configuration values
-APP_CONFIG = assemble_app_configuration_details(ROOT)
+APP_CONFIG = assemble_app_configuration_details(CONFIG_PATH)
 
 # Setup Sentry & Logging
 logging.config.dictConfig(LOGGING_DICT)
