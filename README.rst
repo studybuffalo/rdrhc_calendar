@@ -19,7 +19,7 @@ named "config") - TODO: add demo config file.
 Running Program
 ===============
 
-.. code:: python
+.. code:: shell
 
   pipenv run python run.py path_to_application
 
@@ -28,7 +28,7 @@ Testing
 
 Unit tests for this application can be run via the standard pytest commands:
 
-.. code:: python
+.. code:: shell
 
   # Standard testing
   pipenv run py.test tests/
