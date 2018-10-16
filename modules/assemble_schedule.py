@@ -203,10 +203,6 @@ def retrieve_old_schedule(app_config, user_id):
 
     return old_schedule
 
-def get_formatted_date(date):
-    """Converts Python date object into string (as yyyy-mmm-dd)"""
-    return date.strftime('%Y-%b-%d').upper()
-
 def generate_formatted_schedule(user, app_config, raw_schedule):
     """Takes the raw schedule and returns the required formatted objects"""
 
@@ -326,7 +322,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
                     # Shift has no times - don't add to schedule and mark
                     # it in the null shift list
                     msg = '{} - {}'.format(
-                        get_formatted_date(shift.start_date), shift.shift_code
+                        shift.start_date.strftime('%Y-%m-%d'), shift.shift_code
                     )
 
                     null_shifts.append(
@@ -340,7 +336,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
         if shift_match is False:
             # Add missing shift to the Missing shift list
             msg = '{} - {}'.format(
-                get_formatted_date(shift.start_date), shift.shift_code
+                shift.start_date.strftime('%Y-%m-%d'), shift.shift_code
             )
 
             missing_shifts.append(
@@ -416,19 +412,14 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
                 old_codes = '/'.join(str(s.shift_code) for s in old_shifts)
                 new_codes = '/'.join(str(s.shift_code) for s in new_shifts)
                 msg = '{} - {} changed to {}'.format(
-                    get_formatted_date(old_date),
-                    old_codes,
-                    new_codes
+                    old_date, old_codes, new_codes
                 )
 
                 changes.append(EmailShift(old_date, msg))
         else:
             # Shift was deleted
             old_codes = '/'.join(str(s.shift_code) for s in old_shifts)
-            msg = '{} - {}'.format(
-                get_formatted_date(old_date),
-                old_codes
-            )
+            msg = '{} - {}'.format(old_date, old_codes)
 
             deletions.append(EmailShift(old_date, msg))
 
@@ -440,10 +431,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
 
         if new_date not in old_schedule:
             new_codes = '/'.join(str(s.shift_code) for s in new_shifts)
-            msg = '{} - {}'.format(
-                get_formatted_date(new_date),
-                new_codes
-            )
+            msg = '{} - {}'.format(new_date.strftime('%Y-%m-%d'), new_codes)
 
             additions.append(EmailShift(new_date, msg))
 
