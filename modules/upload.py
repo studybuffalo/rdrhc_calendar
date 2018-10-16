@@ -1,44 +1,69 @@
 """Functions to handle upload to the database."""
 
+import json
 import logging
+
+import requests
+
 
 # Setup logger
 LOG = logging.getLogger(__name__)
 
-def update_schedule_database(user, schedule):
-    """Uploads user schedule to Django Database"""
+def delete_user_schedule(user_id, app_config):
+    """Removes the provided users schedule from the database."""
+    LOG.debug("Removing old shifts for user id = %s", user_id)
 
-    # Remove the user's old schedule
-    log.debug("Removing old shifts for user")
+    api_url = '{}shifts/{}/delete/'.format(app_config['api_url'], user_id)
 
-    try:
-        Shift.objects.filter(sb_user=user.sb_user).delete()
-    except Exception:
-        log.error(
-            "Unable to remove old schedule for {}".format(user.name),
-            exc_info=True
+    response = requests.delete(api_url, headers=app_config['api_headers'])
+
+    if response.status_code >= 400:
+        raise requests.ConnectionError(
+            (
+                'Unable to connect to API ({}) and delete '
+                'user shift codes.'
+            ).format(api_url)
         )
+
+def upload_user_schedule(user_id, schedule, app_config):
+    """Uploads the provided users schedule to the database."""
+    LOG.debug("Uploading the new shifts for user")
+
+    api_url = '{}shifts/{}/upload/'.format(app_config['api_url'], user_id)
+
+    post_data = []
+
+    for shift in schedule:
+        post_data.append({
+            'sb_user': user_id,
+            'date': shift.start_datetime.strftime('%Y-%m-%d'),
+            'shift_code': (
+                shift.django_shift['id'] if shift.django_shift else ''
+            ),
+            'text_shift_code': shift.shift_code,
+        })
+
+    response = requests.post(
+        api_url,
+        data={'schedule': json.dumps(post_data)},
+        headers=app_config['api_headers'],
+    )
+
+    if response.status_code >= 400:
+        raise requests.ConnectionError(
+            (
+                'Unable to connect to API ({}) and upload '
+                'user schedule: {}'
+            ).format(api_url, response.text)
+        )
+
+def update_schedule_database(user, schedule, app_config):
+    """Uploads user schedule to Django Database"""
+    # Delete the current schedule
+    delete_user_schedule(user['sb_user'], app_config)
 
     # Upload the new schedule
-    log.debug("Uploading the new shifts for user")
-
-    for s in schedule:
-        upload = Shift(
-            sb_user=user.sb_user,
-            date=s.start_datetime.date(),
-            shift_code=s.django_shift,
-            text_shift_code=s.shift_code
-        )
-
-        try:
-            upload.save()
-        except Exception:
-            log.error(
-                "Unable to save shift ({}) to schedule for {}".format(
-                    s.shift_code, user.name
-                ),
-                exc_info=True
-            )
+    upload_user_schedule(user['sb_user'], schedule, app_config)
 
 def update_missing_codes_database(missing_codes):
     """Uploads any new missing shift codes"""
@@ -56,7 +81,7 @@ def update_missing_codes_database(missing_codes):
 
                 # If this is a new code, record it to email owner
                 if missing_code:
-                    log.debug("New code to upload: {}".format(code))
+                    LOG.debug("New code to upload: {}".format(code))
 
                     new_codes.append("{} - {}".format(role, code))
 
