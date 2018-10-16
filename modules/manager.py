@@ -15,6 +15,24 @@ from modules.retrieve import retrieve_schedule_file_paths
 
 LOG = logging.getLogger(__name__)
 
+def retrieve_users(app_config):
+    """Retrieves all the calendar users."""
+    LOG.info('Retrieving all calendar users')
+
+    response = requests.get(
+        '{}users/'.format(app_config['api_url']),
+        headers=app_config['api_headers'],
+    )
+
+    if response.status_code >= 400:
+        raise requests.ConnectionError(
+            'Unable to connect to API ({})'.format(app_config['api_url'])
+        )
+
+    users = json.loads(response.text)
+
+    return users
+
 def run_program(app_config):
     """Main function to run the program."""
 
@@ -24,19 +42,8 @@ def run_program(app_config):
     LOG.info('Retrieving the Excel Schedules')
     excel_files = retrieve_schedule_file_paths(app_config)
 
-    # Collect a list of all the user names
-    LOG.info('Retrieving all calendar users')
-    user_response = requests.get(
-        '{}users/'.format(app_config['api_url']),
-        headers=app_config['api_headers'],
-    )
-
-    if user_response.status_code >= 400:
-        raise requests.ConnectionError(
-            'Unable to connect to API ({})'.format(app_config['api_url'])
-        )
-
-    user = json.loads(user_response.text)
+    # Collect list of all the user names
+    users = retrieve_users(app_config)
 
     # Set to hold any codes not in Django DB
     missing_codes = {
@@ -46,7 +53,7 @@ def run_program(app_config):
     }
 
     # Cycle through each user and process their schedule
-    for user in user:
+    for user in users:
         # Assemble the users schedule
         LOG.info(
             'Assembling schedule for %s (role = %s)',
