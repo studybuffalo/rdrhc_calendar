@@ -6,10 +6,10 @@ from datetime import datetime, timedelta
 from unipath import Path
 
 
-def assemble_app_configuration_details(root_path):
+def assemble_app_configuration_details(config_path):
     """Collects and formats all the require configuration data"""
     config = configparser.ConfigParser()
-    config.read(Path(root_path.parent, 'config', 'rdrhc_calendar.cfg'))
+    config.read(config_path)
 
     weekday_start = datetime.strptime(
         config.get('schedules', 'default_weekday_start'),
