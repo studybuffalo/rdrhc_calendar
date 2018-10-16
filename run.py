@@ -1,8 +1,8 @@
 """Downloads, extracts, and uploads schedules for AHS CZ pharmacists.
-    Last Update: 2017-Oct-01
+    Last Update: 2018-Oct-15
 
     Copyright (c) Notices
-        2017  Joshua R. Torrance  <studybuffalo@studybuffalo.com>
+        2018  Joshua R. Torrance  <studybuffalo@studybuffalo.com>
 
     This program is free software: you can redistribute it and/or
     modify it under the terms of the GNU General Public License as
