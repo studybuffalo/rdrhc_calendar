@@ -30,7 +30,7 @@ pipeline {
   post {
     always {
       step([$class: 'CoberturaPublisher', coberturaReportFile: 'reports/coverage.xml', failUnhealthy: false, failUnstable: false, maxNumberOfBuilds: 10, onlyStable: false, sourceEncoding: 'ASCII'])
-      junit 'reports/tests.*.xml'
+      junit 'reports/tests.xml'
     }
   }
   options {
