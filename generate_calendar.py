@@ -112,10 +112,10 @@ for user in USERS:
             schedule.missing_upload
         )
 
-# # Upload the missing codes to the database
+# Upload the missing codes to the database
 MISSING_CODES_UPLOAD = upload.update_missing_codes_database(MISSING_CODES)
 
-# # Notify owner that there are new codes to upload
+# Notify owner that there are new codes to upload
 if MISSING_CODES_UPLOAD:
     notify.email_missing_codes(MISSING_CODES_UPLOAD, APP_CONFIG)
 
