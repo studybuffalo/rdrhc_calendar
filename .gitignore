@@ -1,3 +1,4 @@
 # Testing Files
 .pytest_cache
 .coverage
+htmlcov/
