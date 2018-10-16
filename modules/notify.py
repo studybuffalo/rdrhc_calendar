@@ -1,426 +1,514 @@
-from datetime import datetime, timedelta
+"""Functions used to send notifications to users and owners."""
+
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formataddr
+import json
 import logging
 import re
 import smtplib
 
+import requests
+
+
 # Setup logger
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
+def retrieve_emails(user_id, app_config):
+    """Retrieves the specified user's emails."""
+    LOG.debug('Retrieving email(s) for user id = %s', user_id)
 
-def collect_emails(calendar, email_accounts):
-    '''Retrieves a specified calendar user's email'''
-    emails = email_accounts.objects.filter(user=calendar.sb_user)
+    api_url = '{}users/{}/emails/'.format(app_config['api_url'], user_id)
 
-    email_list = []
+    emails_response = requests.get(
+        api_url,
+        headers=app_config['api_headers']
+    )
 
-    for email in emails:
-        email_list.append(email.email)
+    if emails_response.status_code >= 400:
+        raise requests.ConnectionError(
+            (
+                'Unable to connect to API ({}) and retrieve '
+                'user shift codes.'
+            ).format(api_url)
+        )
 
-    return email_list
+    emails = []
 
-def email_welcome(user, emails, config):
+    for email in json.loads(emails_response.text):
+        emails.append(email['email'])
+
+    return emails
+
+def update_first_email_sent_flag(user_id, app_config):
+    """Flags specified account as "first email sent"."""
+    LOG.debug('Updating "first_email_sent" flag for user id = %s', user_id)
+
+    api_url = '{}users/{}/emails/first-sent/'.format(
+        app_config['api_url'], user_id
+    )
+
+    response = requests.post(
+        api_url,
+        headers=app_config['api_headers']
+    )
+
+    if response.status_code >= 400:
+        raise requests.ConnectionError(
+            (
+                'Unable to connect to API ({}) and retrieve '
+                'user shift codes.'
+            ).format(api_url)
+        )
+
+def email_welcome(user, emails, app_config):
     """Sends a welcome email to any new user"""
 
     # Check if user needs email sent (signed up in past 24 hours)
-    if user.first_email_sent == False:
-        log.debug("Processing data to send user a welcome email")
+    if user['first_email_sent'] is False:
+        LOG.debug('Processing data to send user a welcome email')
 
-        from_name = config["email"]["from_name"]
-        from_email = config["email"]["from_email"]
+        from_name = app_config['email']['from_name']
+        from_email = app_config['email']['from_email']
         from_address = formataddr((from_name, from_email))
 
         to_addresses = []
 
         for email in emails:
-            to_name = user.name
+            to_name = user['name']
             to_email = email
             to_address = formataddr((to_name, to_email))
 
             to_addresses.append(to_address)
 
-        subject = "Welcome to Your New Online Schedule"
+        subject = 'Welcome to Your New Online Schedule'
 
         content = MIMEMultipart('alternative')
         content['From'] = from_address
-        content['To'] = ",".join(to_addresses)
+        content['To'] = ','.join(to_addresses)
         content['Subject'] = subject
-        content["List-Unsubscribe"] = "<{}>".format(
-            config["email"]["unsubscribe_link"]
+        content['List-Unsubscribe'] = '<{}>'.format(
+            app_config['email']['unsubscribe_link']
         )
 
         # Collects text welcome email from template file
-        textLoc = config["email"]["welcome_text"]
+        text_loc = app_config['email']['welcome_text']
 
-        try:
-            with open(textLoc, "r") as textFile:
-                text = textFile.read().replace("\n", "\r\n")
-        except Exception:
-            log.warn(
-                "Unable to read welcome email text template",
-                exc_info=True
-            )
-            return
+        with open(text_loc, 'r') as text_file:
+            text = text_file.read().replace('\n', '\r\n')
+
+        # try:
+        #     with open(text_loc, 'r') as text_file:
+        #         text = text_file.read().replace('\n', '\r\n')
+        # except Exception:
+        #     LOG.warn(
+        #         'Unable to read welcome email text template',
+        #         exc_info=True
+        #     )
+        #     return
 
         # Collects html welcome email from template file
-        htmlLoc = config["email"]["welcome_html"]
+        html_loc = app_config['email']['welcome_html']
 
-        try:
-            with open(htmlLoc, "r") as htmlFile:
-                html = htmlFile.read()
-        except Exception:
-            log.exception(
-                "Unable to read welcome email html template",
-                exc_info=True
-            )
-            return
+        with open(html_loc, 'r') as html_file:
+            html = html_file.read()
+
+        # try:
+        #     with open(html_loc, 'r') as html_file:
+        #         html = html_file.read()
+        # except Exception:
+        #     LOG.exception(
+        #         'Unable to read welcome email html template',
+        #         exc_info=True
+        #     )
+        #     return
 
         # Assemble an HTML and plain text version
-        textBody = MIMEText(text, 'plain')
-        htmlBody = MIMEText(html, 'html')
+        text_body = MIMEText(text, 'plain')
+        html_body = MIMEText(html, 'html')
 
-        content.attach(textBody)
-        content.attach(htmlBody)
+        content.attach(text_body)
+        content.attach(html_body)
 
         # Attempt to send email
-        try:
-            if config["debug"]["email_console"]:
-                log.debug(content.as_string())
-            else:
-                log.info("Sending welcome email to %s" % user.name)
-                server = smtplib.SMTP(config["email"]["server"])
+        if app_config['debug']['email_console']:
+            LOG.debug(content.as_string())
+        else:
+            LOG.info('Sending welcome email to %s', user['name'])
+            server = smtplib.SMTP(app_config['email']['server'])
 
-                server.ehlo()
-                server.starttls()
-                server.sendmail(from_address, to_addresses, content.as_string())
-                server.quit()
+            server.ehlo()
+            server.starttls()
+            server.sendmail(from_address, to_addresses, content.as_string())
+            server.quit()
 
-            # Update user profile to mark first_email_sent as true
-            user.first_email_sent = True
-            user.save()
+        # Update user profile to mark first_email_sent as true
+        update_first_email_sent_flag(user['id'], app_config)
 
-        except Exception:
-            log.error(
-                "Unable to send welcome email to {}".format(user.name),
-                exc_info=True
-            )
+        # try:
+        #     if app_config['debug']['email_console']:
+        #         LOG.debug(content.as_string())
+        #     else:
+        #         LOG.info('Sending welcome email to %s', user['name'])
+        #         server = smtplib.SMTP(app_config['email']['server'])
 
-def email_schedule(user, emails, config, schedule):
+        #         server.ehlo()
+        #         server.starttls()
+        #         server.sendmail(
+        #             from_address, to_addresses, content.as_string()
+        #         )
+        #         server.quit()
+
+        #     # Update user profile to mark first_email_sent as true
+        #     user.first_email_sent = True
+        #     user.save()
+
+        # except Exception:
+        #     LOG.error(
+        #         'Unable to send welcome email to {}'.format(user.name),
+        #         exc_info=True
+        #     )
+
+def email_schedule(user, emails, app_config, schedule):
     """Emails user with any schedule changes"""
 
-    if (len(schedule.additions) or len(schedule.deletions) or
-        len(schedule.changes) or len(schedule.missing) or len(schedule.null)):
-        log.debug("User qualifies for an update email to be sent")
+    if (any([
+            schedule.additions, schedule.deletions, schedule.changes,
+            schedule.missing, schedule.null
+    ])):
+        LOG.debug('User qualifies for an update email to be sent')
 
         # Opens the update email (text) file
-        log.debug("Opening the email templates")
+        LOG.debug('Opening the email templates')
 
-        text_loc = config["email"]["update_text"]
+        text_loc = app_config['email']['update_text']
 
-        try:
-            with open(text_loc, "r") as textFile:
-                text = textFile.read().replace("\n", "\r\n")
-        except Exception:
-            log.warn(
-                "Unable to read welcome email text template at {}".format(
-                    text_loc
-                ),
-                exc_info=True
-            )
-            text = None
+        with open(text_loc, 'r') as text_file:
+            text = text_file.read().replace('\n', '\r\n')
+
+        # try:
+        #     with open(text_loc, 'r') as textFile:
+        #         text = textFile.read().replace('\n', '\r\n')
+        # except Exception:
+        #     LOG.warn(
+        #         'Unable to read welcome email text template at {}'.format(
+        #             text_loc
+        #         ),
+        #         exc_info=True
+        #     )
+        #     text = None
 
         # Opens the update email (html) file
-        html_loc = config["email"]["update_html"]
+        html_loc = app_config['email']['update_html']
 
-        try:
-            with open(html_loc, "r") as htmlFile:
-                html = htmlFile.read()
-        except Exception:
-            log.warn(
-                "Unable to read welcome email html template at {}".format(
-                    html_loc
-                ),
-                exc_info=True
-            )
-            html = None
+        with open(html_loc, 'r') as html_file:
+            html = html_file.read()
+
+        # try:
+        #     with open(html_loc, 'r') as htmlFile:
+        #         html = htmlFile.read()
+        # except Exception:
+        #     LOG.warn(
+        #         'Unable to read welcome email html template at {}'.format(
+        #             html_loc
+        #         ),
+        #         exc_info=True
+        #     )
+        #     html = None
 
         # Set the user name
-        text = text.replace("{{ user_name }}", user.name)
-        html = html.replace("{{ user_name }}", user.name)
+        text = text.replace('{{ user_name }}', user['name'])
+        html = html.replace('{{ user_name }}', user['name'])
 
         # Manage added shifts
-        log.debug("Updating the 'additions' section")
+        LOG.debug('Updating the "additions" section')
 
-        if len(schedule.additions):
+        if schedule.additions:
             # Cycle through additions and insert into templates
             additions_text = []
             additions_html = []
 
-            for a in schedule.additions:
-                additions_text.append(" - {}".format(a.msg))
-                additions_html.append("<li>{}</li>".format(a.msg))
+            for addition in schedule.additions:
+                additions_text.append(' - {}'.format(addition.msg))
+                additions_html.append('<li>{}</li>'.format(addition.msg))
 
-            text = text.replace("{{ additions }}", "\r\n".join(additions_text))
-            html = html.replace("{{ additions }}", "\r\n".join(additions_html))
+            text = text.replace('{{ additions }}', '\r\n'.join(additions_text))
+            html = html.replace('{{ additions }}', '\r\n'.join(additions_html))
 
             # Remove the block markers
-            text = text.replace("{% block additions %}", "")
-            html = html.replace("{% block additions %}", "")
+            text = text.replace('{% block additions %}', '')
+            html = html.replace('{% block additions %}', '')
         else:
             # No additions, remove entire section
-            regex = r"{% block additions %}.*{% block additions %}"
+            regex = r'{% block additions %}.*{% block additions %}'
 
-            text = re.sub(regex, "", text, flags=re.S)
-            html = re.sub(regex, "", html, flags=re.S)
+            text = re.sub(regex, '', text, flags=re.S)
+            html = re.sub(regex, '', html, flags=re.S)
 
         # Manage deleted shifts
-        log.debug("Updating the 'deletions' section")
+        LOG.debug('Updating the "deletions" section')
 
-        if len(schedule.deletions):
+        if schedule.deletions:
             deletions_text = []
             deletions_html = []
 
-            for d in schedule.deletions:
-                deletions_text.append(" - {}".format(d.msg))
-                deletions_html.append("<li>{}</li>".format(d.msg))
+            for deletion in schedule.deletions:
+                deletions_text.append(' - {}'.format(deletion.msg))
+                deletions_html.append('<li>{}</li>'.format(deletion.msg))
 
-            text = text.replace("{{ deletions }}", "\r\n".join(deletions_text))
-            html = html.replace("{{ deletions }}", "\r\n".join(deletions_html))
+            text = text.replace('{{ deletions }}', '\r\n'.join(deletions_text))
+            html = html.replace('{{ deletions }}', '\r\n'.join(deletions_html))
 
             # Remove the block markers
-            text = text.replace("{% block deletions %}", "")
-            html = html.replace("{% block deletions %}", "")
+            text = text.replace('{% block deletions %}', '')
+            html = html.replace('{% block deletions %}', '')
         else:
             # No deletions, remove entire section
-            regex = r"{% block deletions %}.*{% block deletions %}"
+            regex = r'{% block deletions %}.*{% block deletions %}'
 
-            text = re.sub(regex, "", text, flags=re.S)
-            html = re.sub(regex, "", html, flags=re.S)
+            text = re.sub(regex, '', text, flags=re.S)
+            html = re.sub(regex, '', html, flags=re.S)
 
         # Manage changed shifts
-        log.debug("Updating the 'changes' section")
+        LOG.debug('Updating the "changes" section')
 
-        if len(schedule.changes):
+        if schedule.changes:
             changes_text = []
             changes_html = []
 
-            for c in schedule.changes:
-                changes_text.append(" - {}".format(c.msg))
-                changes_html.append("<li>{}</li>".format(c.msg))
+            for change in schedule.changes:
+                changes_text.append(' - {}'.format(change.msg))
+                changes_html.append('<li>{}</li>'.format(change.msg))
 
-            text = text.replace("{{ changes }}", "\r\n".join(changes_text))
-            html = html.replace("{{ changes }}", "\r\n".join(changes_html))
+            text = text.replace('{{ changes }}', '\r\n'.join(changes_text))
+            html = html.replace('{{ changes }}', '\r\n'.join(changes_html))
 
             # Remove the block markers
-            text = text.replace("{% block changes %}", "")
-            html = html.replace("{% block changes %}", "")
+            text = text.replace('{% block changes %}', '')
+            html = html.replace('{% block changes %}', '')
         else:
             # No changes, remove entire section
-            regex = r"{% block changes %}.*{% block changes %}"
+            regex = r'{% block changes %}.*{% block changes %}'
 
-            text = re.sub(regex, "", text, flags=re.S)
-            html = re.sub(regex, "", html, flags=re.S)
+            text = re.sub(regex, '', text, flags=re.S)
+            html = re.sub(regex, '', html, flags=re.S)
 
         # Manage missing shifts
-        log.debug("Updating the 'missing' section")
+        LOG.debug('Updating the "missing" section')
 
-        if len(schedule.missing):
-            defaults = config["calendar_defaults"]
+        if schedule.missing:
+            defaults = app_config['calendar_defaults']
 
-            weekday_start = defaults["weekday_start"].strftime("%H:%M")
-            text = text.replace("{{ weekday_start }}", weekday_start)
-            html = html.replace("{{ weekday_start }}", weekday_start)
+            weekday_start = defaults['weekday_start'].strftime('%H:%M')
+            text = text.replace('{{ weekday_start }}', weekday_start)
+            html = html.replace('{{ weekday_start }}', weekday_start)
 
-            weekday_end = defaults["weekday_end"].strftime("%H:%M")
-            text = text.replace("{{ weekday_end }}", weekday_end)
-            html = html.replace("{{ weekday_end }}", weekday_end)
+            weekday_end = defaults['weekday_end'].strftime('%H:%M')
+            text = text.replace('{{ weekday_end }}', weekday_end)
+            html = html.replace('{{ weekday_end }}', weekday_end)
 
-            weekend_start = defaults["weekend_start"].strftime("%H:%M")
-            text = text.replace("{{ weekend_start }}", weekend_start)
-            html = html.replace("{{ weekend_start }}", weekend_start)
+            weekend_start = defaults['weekend_start'].strftime('%H:%M')
+            text = text.replace('{{ weekend_start }}', weekend_start)
+            html = html.replace('{{ weekend_start }}', weekend_start)
 
-            weekend_end = defaults["weekend_end"].strftime("%H:%M")
-            text = text.replace("{{ weekend_end }}", weekend_end)
-            html = html.replace("{{ weekend_end }}", weekend_end)
+            weekend_end = defaults['weekend_end'].strftime('%H:%M')
+            text = text.replace('{{ weekend_end }}', weekend_end)
+            html = html.replace('{{ weekend_end }}', weekend_end)
 
-            stat_start = defaults["stat_start"].strftime("%H:%M")
-            text = text.replace("{{ stat_start }}", stat_start)
-            html = html.replace("{{ stat_start }}", stat_start)
+            stat_start = defaults['stat_start'].strftime('%H:%M')
+            text = text.replace('{{ stat_start }}', stat_start)
+            html = html.replace('{{ stat_start }}', stat_start)
 
-            stat_end = defaults["stat_end"].strftime("%H:%M")
-            text = text.replace("{{ stat_end }}", stat_end)
-            html = html.replace("{{ stat_end }}", stat_end)
+            stat_end = defaults['stat_end'].strftime('%H:%M')
+            text = text.replace('{{ stat_end }}', stat_end)
+            html = html.replace('{{ stat_end }}', stat_end)
 
             missing_text = []
             missing_html = []
 
-            for m in schedule.missing:
-                missing_text.append(" - {}".format(m.msg))
-                missing_html.append("<li>{}</li>".format(m.msg))
+            for missing in schedule.missing:
+                missing_text.append(' - {}'.format(missing.msg))
+                missing_html.append('<li>{}</li>'.format(missing.msg))
 
-            text = text.replace("{{ missing }}", "\r\n".join(missing_text))
-            html = html.replace("{{ missing }}", "\r\n".join(missing_html))
+            text = text.replace('{{ missing }}', '\r\n'.join(missing_text))
+            html = html.replace('{{ missing }}', '\r\n'.join(missing_html))
 
             # Remove the block markers
-            text = text.replace("{% block missing %}", "")
-            html = html.replace("{% block missing %}", "")
+            text = text.replace('{% block missing %}', '')
+            html = html.replace('{% block missing %}', '')
         else:
             # No missing shifts, remove entire section
-            regex = r"{% block missing %}.*{% block missing %}"
+            regex = r'{% block missing %}.*{% block missing %}'
 
-            text = re.sub(regex, "", text, flags=re.S)
-            html = re.sub(regex, "", html, flags=re.S)
+            text = re.sub(regex, '', text, flags=re.S)
+            html = re.sub(regex, '', html, flags=re.S)
 
         # Manage excluded shifts
-        log.debug("Updating the 'excluded' section")
+        LOG.debug('Updating the "excluded" section')
 
-        if len(schedule.null):
+        if schedule.null:
             null_text = []
             null_html = []
 
-            for n in schedule.null:
-                null_text.append(" - {}".format(n.msg))
-                null_html.append("<li>{}</li>".format(n.msg))
+            for null in schedule.null:
+                null_text.append(' - {}'.format(null.msg))
+                null_html.append('<li>{}</li>'.format(null.msg))
 
-            text = text.replace("{{ excluded }}", "\r\n".join(null_text))
-            html = html.replace("{{ excluded }}", "\r\n".join(null_html))
+            text = text.replace('{{ excluded }}', '\r\n'.join(null_text))
+            html = html.replace('{{ excluded }}', '\r\n'.join(null_html))
 
             # Remove the block markers
-            text = text.replace("{% block excluded %}", "")
-            html = html.replace("{% block excluded %}", "")
+            text = text.replace('{% block excluded %}', '')
+            html = html.replace('{% block excluded %}', '')
         else:
             # No excluded shifts, remove entire section
-            regex = r"{% block excluded %}.*{% block excluded %}"
+            regex = r'{% block excluded %}.*{% block excluded %}'
 
-            text = re.sub(regex, "", text, flags=re.S)
-            html = re.sub(regex, "", html, flags=re.S)
+            text = re.sub(regex, '', text, flags=re.S)
+            html = re.sub(regex, '', html, flags=re.S)
 
         # Add the calendar name
-        calendar_name = user.calendar_name
-        text = text.replace("{{ calendar_name }}", calendar_name)
-        html = html.replace("{{ calendar_name }}", calendar_name)
+        calendar_name = user['calendar_name']
+        text = text.replace('{{ calendar_name }}', calendar_name)
+        html = html.replace('{{ calendar_name }}', calendar_name)
 
 
         # Setup email settings
-        log.debug("Setting up the other email settings")
+        LOG.debug('Setting up the other email settings')
 
-        from_name = config["email"]["from_name"]
-        from_email = config["email"]["from_email"]
+        from_name = app_config['email']['from_name']
+        from_email = app_config['email']['from_email']
         from_address = formataddr((from_name, from_email))
 
         # Create list of all of the user's emails
         to_addresses = []
 
         for email in emails:
-            to_name = user.name
+            to_name = user['name']
             to_email = email
             to_address = formataddr((to_name, to_email))
 
             to_addresses.append(to_address)
 
-        subject = "RDRHC Schedule Changes"
+        subject = 'RDRHC Schedule Changes'
 
         content = MIMEMultipart('alternative')
         content['From'] = from_address
-        content['To'] = ",".join(to_addresses)
+        content['To'] = ','.join(to_addresses)
         content['Subject'] = subject
-        content["List-Unsubscribe"] = "<{}>".format(
-            config["email"]["unsubscribe_link"]
+        content['List-Unsubscribe'] = '<{}>'.format(
+            app_config['email']['unsubscribe_link']
         )
 
         # Construct the email body
-        textBody = MIMEText(text, 'plain')
-        htmlBody = MIMEText(html, 'html')
+        text_body = MIMEText(text, 'plain')
+        html_body = MIMEText(html, 'html')
 
-        content.attach(textBody)
-        content.attach(htmlBody)
+        content.attach(text_body)
+        content.attach(html_body)
 
         # Send the email
-        try:
-            if config["debug"]["email_console"]:
-                log.debug(content.as_string())
-            else:
-                log.info("Sending update email to %s" % user.name)
+        if app_config['debug']['email_console']:
+            LOG.debug(content.as_string())
+        else:
+            LOG.info('Sending update email to %s', user.name)
 
-                server = smtplib.SMTP(config["email"]["server"])
-                server.ehlo()
-                server.starttls()
-                server.sendmail(from_address, to_addresses, content.as_string())
-                server.quit()
-        except Exception:
-            log.error(
-                "Unable to send update email to {}".format(user.name),
-                exc_info=True
-            )
+            server = smtplib.SMTP(app_config['email']['server'])
+            server.ehlo()
+            server.starttls()
+            server.sendmail(from_address, to_addresses, content.as_string())
+            server.quit()
+        # try:
+        #     if app_config['debug']['email_console']:
+        #         LOG.debug(content.as_string())
+        #     else:
+        #         LOG.info('Sending update email to %s' % user.name)
 
-def email_missing_codes(missing_codes, config):
+        #         server = smtplib.SMTP(app_config['email']['server'])
+        #         server.ehlo()
+        #         server.starttls()
+        #         server.sendmail(
+        #             from_address, to_addresses, content.as_string()
+        #         )
+        #         server.quit()
+        # except Exception:
+        #     LOG.error(
+        #         'Unable to send update email to {}'.format(user.name),
+        #         exc_info=True
+        #     )
+
+def email_missing_codes(missing_codes, app_config):
     """Emails owner with any new missing shift codes"""
 
-    log.debug("New missing shift codes uploaded to database - notifying owner")
+    LOG.debug('New missing shift codes uploaded to database - notifying owner')
 
     # Opens the notification (text) template
-    log.debug("Opening the email templates")
+    LOG.debug('Opening the email templates')
 
-    text_loc = config["email"]["missing_codes_text"]
+    text_loc = app_config['email']['missing_codes_text']
 
-    try:
-        with open(text_loc, "r") as textFile:
-            text = textFile.read().replace("\n", "\r\n")
-    except Exception:
-        log.warn(
-            "Unable to read missing codes email text template at {}".format(
-                text_loc
-            ),
-            exc_info=True
-        )
-        text = None
+    with open(text_loc, 'r') as text_file:
+        text = text_file.read().replace('\n', '\r\n')
+
+    # try:
+    #     with open(text_loc, 'r') as textFile:
+    #         text = textFile.read().replace('\n', '\r\n')
+    # except Exception:
+    #     LOG.warn(
+    #         'Unable to read missing codes email text template at {}'.format(
+    #             text_loc
+    #         ),
+    #         exc_info=True
+    #     )
+    #     text = None
 
     # Opens the notification (text) template
-    html_loc = config["email"]["missing_codes_html"]
+    html_loc = app_config['email']['missing_codes_html']
 
-    try:
-        with open(html_loc, "r") as htmlFile:
-            html = htmlFile.read()
-    except Exception:
-        log.warn(
-            "Unable to read missing codes email html template at {}".format(
-                html_loc
-            ),
-            exc_info=True
-        )
-        html = None
+    with open(html_loc, 'r') as html_file:
+        html = html_file.read()
+
+    # try:
+    #     with open(html_loc, 'r') as htmlFile:
+    #         html = htmlFile.read()
+    # except Exception:
+    #     LOG.warn(
+    #         'Unable to read missing codes email html template at {}'.format(
+    #             html_loc
+    #         ),
+    #         exc_info=True
+    #     )
+    #     html = None
 
     # Add all the missing shift codes to the email
-    log.debug("Formatting missing shift codes for email")
+    LOG.debug('Formatting missing shift codes for email')
 
     missing_codes_text = []
     missing_codes_html = []
 
     for code in missing_codes:
-        missing_codes_text.append(" - {}".format(code))
-        missing_codes_html.append("<li>{}</li>".format(code))
+        missing_codes_text.append(' - {}'.format(code))
+        missing_codes_html.append('<li>{}</li>'.format(code))
 
-    text = text.replace("{{ codes }}", "\r\n".join(missing_codes_text))
-    html = html.replace("{{ codes }}", "\r\n".join(missing_codes_html))
+    text = text.replace('{{ codes }}', '\r\n'.join(missing_codes_text))
+    html = html.replace('{{ codes }}', '\r\n'.join(missing_codes_html))
 
     # Remove the block markers
-    text = text.replace("{% block codes %}", "")
-    html = html.replace("{% block codes %}", "")
+    text = text.replace('{% block codes %}', '')
+    html = html.replace('{% block codes %}', '')
 
     # Setup email settings
-    log.debug("Setting up the other email settings")
+    LOG.debug('Setting up the other email settings')
 
-    from_name = config["email"]["from_name"]
-    from_email = config["email"]["from_email"]
+    from_name = app_config['email']['from_name']
+    from_email = app_config['email']['from_email']
     from_address = formataddr((from_name, from_email))
 
-    to_name = config["email"]["owner_name"]
-    to_email = config["email"]["owner_email"]
+    to_name = app_config['email']['owner_name']
+    to_email = app_config['email']['owner_email']
     to_address = formataddr((to_name, to_email))
 
-    subject = "RDRHC Calendar Missing Shift Codes"
+    subject = 'RDRHC Calendar Missing Shift Codes'
 
     content = MIMEMultipart('alternative')
     content['From'] = from_address
@@ -435,23 +523,38 @@ def email_missing_codes(missing_codes, config):
     content.attach(html_body)
 
     # Send the email
-    try:
-        if config["debug"]["email_console"]:
-            log.debug(content.as_string())
-        else:
-            log.info("Sending missing shift code email")
+    if app_config['debug']['email_console']:
+        LOG.debug(content.as_string())
+    else:
+        LOG.info('Sending missing shift code email')
 
-            server = smtplib.SMTP(config["email"]["server"])
-            server.ehlo()
-            server.starttls()
-            server.sendmail(from_address, to_address, content.as_string())
-            server.quit()
-    except Exception:
-        log.error("Unable to send missing shift code email", exc_info=True)
+        server = smtplib.SMTP(app_config['email']['server'])
+        server.ehlo()
+        server.starttls()
+        server.sendmail(from_address, to_address, content.as_string())
+        server.quit()
+
+    # try:
+    #     if app_config['debug']['email_console']:
+    #         LOG.debug(content.as_string())
+    #     else:
+    #         LOG.info('Sending missing shift code email')
+
+    #         server = smtplib.SMTP(app_config['email']['server'])
+    #         server.ehlo()
+    #         server.starttls()
+    #         server.sendmail(from_address, to_address, content.as_string())
+    #         server.quit()
+    # except Exception:
+    #     LOG.error('Unable to send missing shift code email', exc_info=True)
 
 def notify_user(user, app_config, schedule):
+    """Determines which emails to send to specified user."""
+    # Get the users email(s)
+    emails = retrieve_emails(user['id'], app_config)
+
     # If this is the first schedule, email the welcome details
-    notify.email_welcome(user, emails, APP_CONFIG)
+    email_welcome(user, emails, app_config)
 
     # Email the user the calendar details
-    notify.email_schedule(user, emails, APP_CONFIG, schedule)
+    email_schedule(user, emails, app_config, schedule)
