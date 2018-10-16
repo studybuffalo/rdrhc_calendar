@@ -12,7 +12,10 @@ Unipath = "*"  # https://github.com/mikeorr/Unipath
 xlrd = "*"  # https://xlrd.readthedocs.io/en/latest/
 
 [dev-packages]
+coverage = "*"  # https://github.com/nedbat/coveragepy
 pylint = "*"  # https://github.com/PyCQA/pylint/
+pytest = "*"  # https://github.com/pytest-dev/pytest
+pytest-cov = "*"  # https://github.com/pytest-dev/pytest-cov
 
 [requires]
 python_version = "3.6"
