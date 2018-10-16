@@ -97,7 +97,7 @@ for user in USERS:
 
     if schedule:
         # Upload the schedule data to the Django server
-        upload.update_schedule_database(user, schedule.shifts)
+        upload.update_schedule_database(user, schedule.shifts, APP_CONFIG)
 
         # Generate and the iCal file to the Django server
         generate_calendar(
