@@ -110,8 +110,8 @@ def retrieve_stat_holidays(app_config, schedule):
     LOG.debug('Retrieving stat holiday information.')
 
     try:
-        first_day = str(schedule[0].start_date)
-        last_day = str(schedule[-1].start_date)
+        first_day = str(schedule[0]['start_date'])
+        last_day = str(schedule[-1]['start_date'])
     except IndexError:
         # Known error when a user has no shifts
         first_day = datetime(2001, 1, 1)
@@ -136,7 +136,7 @@ def retrieve_stat_holidays(app_config, schedule):
 
     stat_holidays = []
 
-    for holiday_date in enumerate(json.loads(stat_holidays_response.text)):
+    for holiday_date in json.loads(stat_holidays_response.text):
         stat_holidays.append(
             datetime.strptime(holiday_date, '%Y-%m-%d')
         )
@@ -176,7 +176,7 @@ def retrieve_old_schedule(app_config, user_id):
                 key_match = True
 
                 # Do not add 'X' shifts
-                if shift['text_shift_code'] != 'X':
+                if shift['text_shift_code'].upper() != 'X':
                     # Append this shift to this key
                     old_schedule[shift_date].append({
                         'shift_code': shift['text_shift_code'],
@@ -185,7 +185,7 @@ def retrieve_old_schedule(app_config, user_id):
 
         if key_match is False:
             # Do not add 'X' shifts
-            if shift['text_shift_code'] != 'X':
+            if shift['text_shift_code'].upper() != 'X':
                 # Append a new key to the groupings
                 old_schedule[shift_date] = [{
                     'shift_code': shift['text_shift_code'],
@@ -219,19 +219,19 @@ def generate_formatted_schedule(user, app_config, raw_schedule, old_schedule):
                     key_match = True
 
                     # Do not add 'X' shifts
-                    if shift.shift_code != 'X':
+                    if shift['shift_code'] != 'X':
                         # Append this shift to this key
                         groupings[shift_date].append({
-                            'shift_code': shift.shift_code,
+                            'shift_code': shift['shift_code'],
                             'start_date': shift_date
                         })
 
             if key_match is False:
                 # Do not add 'X' shifts
-                if shift.shift_code != 'X':
+                if shift['shift_code'] != 'X':
                     # Append a new key to the groupings
                     groupings[shift_date] = [{
-                        'shift_code': shift.shift_code,
+                        'shift_code': shift['shift_code'],
                         'start_date': shift_date
                     }]
 
@@ -254,15 +254,15 @@ def generate_formatted_schedule(user, app_config, raw_schedule, old_schedule):
         shift_match = False
 
         # Record the day of the week
-        dow = shift.start_date.weekday()
+        dow = shift['start_date'].weekday()
 
         # Check if this is a stat holiday
-        stat_match = is_stat(stat_holidays, shift.start_date)
+        stat_match = is_stat(stat_holidays, shift['start_date'])
 
         for code in shift_code_list:
             # If matched, find the proper day to base shift details on
 
-            if shift.shift_code == code['code']:
+            if shift['shift_code'] == code['code']:
                 shift_match = True
 
                 # Apply proper start time and duration
@@ -299,7 +299,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule, old_schedule):
                     minutes = int((duration*60) % 60)
 
                     start_datetime = datetime.combine(
-                        shift.start_date, start_time
+                        shift['start_date'], start_time
                     )
 
                     end_datetime = start_datetime + timedelta(
@@ -308,18 +308,19 @@ def generate_formatted_schedule(user, app_config, raw_schedule, old_schedule):
                     )
 
                     schedule.append(FormattedShift(
-                        shift.shift_code, start_datetime, end_datetime,
-                        shift.comment, code
+                        shift['shift_code'], start_datetime, end_datetime,
+                        shift['comment'], code
                     ))
                 else:
                     # Shift has no times - don't add to schedule and mark
                     # it in the null shift list
                     msg = '{} - {}'.format(
-                        shift.start_date.strftime('%Y-%m-%d'), shift.shift_code
+                        shift.start_date.strftime('%Y-%m-%d'),
+                        shift['shift_code']
                     )
 
                     null_shifts.append(
-                        EmailShift(shift.start_date, msg)
+                        EmailShift(shift['start_date'], msg)
                     )
 
                 # End loop
@@ -329,22 +330,22 @@ def generate_formatted_schedule(user, app_config, raw_schedule, old_schedule):
         if shift_match is False:
             # Add missing shift to the Missing shift list
             msg = '{} - {}'.format(
-                shift.start_date.strftime('%Y-%m-%d'), shift.shift_code
+                shift['start_date'].strftime('%Y-%m-%d'), shift['shift_code']
             )
 
             missing_shifts.append(
-                EmailShift(shift.start_date, msg)
+                EmailShift(shift['start_date'], msg)
             )
 
             # Add the missing code to the missing code set
-            missing_codes_for_upload.add(shift.shift_code)
+            missing_codes_for_upload.add(shift['shift_code'])
 
             # Set default times
             defaults = app_config['calendar_defaults']
 
             if stat_match:
                 start_datetime = datetime.combine(
-                    shift.start_date, defaults['stat_start']
+                    shift['start_date'], defaults['stat_start']
                 )
 
                 end_datetime = start_datetime + timedelta(
@@ -353,7 +354,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule, old_schedule):
                 )
             elif dow >= 5:
                 start_datetime = datetime.combine(
-                    shift.start_date, defaults['weekend_start']
+                    shift['start_date'], defaults['weekend_start']
                 )
 
                 end_datetime = start_datetime + timedelta(
@@ -362,7 +363,7 @@ def generate_formatted_schedule(user, app_config, raw_schedule, old_schedule):
                 )
             else:
                 start_datetime = datetime.combine(
-                    shift.start_date, defaults['weekday_start']
+                    shift['start_date'], defaults['weekday_start']
                 )
 
                 end_datetime = start_datetime + timedelta(
@@ -371,8 +372,8 @@ def generate_formatted_schedule(user, app_config, raw_schedule, old_schedule):
                 )
 
             schedule.append(FormattedShift(
-                shift.shift_code, start_datetime, end_datetime,
-                shift.comment, None
+                shift['shift_code'], start_datetime, end_datetime,
+                shift['comment'], None
             ))
 
 
@@ -393,13 +394,13 @@ def generate_formatted_schedule(user, app_config, raw_schedule, old_schedule):
             if len(old_shifts) == len(new_shifts):
                 for old in old_shifts:
                     for new in new_shifts:
-                        if old.shift_code == new.shift_code:
+                        if old['shift_code'] == new.shift_code:
                             shift_match.append(True)
 
             # If the number of Trues equal length of old_shifts,
             # no changes occurred
             if len(shift_match) != len(old_shifts):
-                old_codes = '/'.join(str(s.shift_code) for s in old_shifts)
+                old_codes = '/'.join(str(s['shift_code']) for s in old_shifts)
                 new_codes = '/'.join(str(s.shift_code) for s in new_shifts)
                 msg = '{} - {} changed to {}'.format(
                     old_date, old_codes, new_codes

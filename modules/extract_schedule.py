@@ -12,18 +12,6 @@ from modules.custom_exceptions import ScheduleError
 
 LOG = logging.getLogger(__name__)
 
-
-class RawShift():
-    """Holds the details for a user's specified shift details"""
-
-    def __init__(self, shift, date, comment):
-        self.shift_code = shift
-        self.start_date = date
-        self.comment = comment
-
-    def __str__(self):
-        return "{} ({})".format(self.shift_code, self.start_date)
-
 def return_column_index(sheet, user, name_row, col_start, col_end):
     """Determines the Excel column containing the provided user"""
     LOG.debug('Looking for user index in Excel schedule')
@@ -139,11 +127,19 @@ def extract_raw_schedule(
             shift_codes = list(set(shift_codes))
 
             for code in shift_codes:
-                shifts.append(RawShift(code, date, comment))
+                shifts.append({
+                    'shift_code': code,
+                    'start_date': date,
+                    'comment': comment,
+                })
 
                 # Add pharmacist 'X' shifts
                 if role == 'p' and code[-1:].upper() == 'X':
-                    shifts.append(RawShift('X', date, ''))
+                    shifts.append({
+                        'shift_code': 'X',
+                        'start_date': date,
+                        'comment': '',
+                    })
 
     # Sort the shifts by date
     # Note: should occur automatically, but just in case
