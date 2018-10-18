@@ -297,6 +297,23 @@ def email_schedule(user, emails, app_config, schedule):
         LOG.debug('Updating the "missing" section')
 
         if schedule.missing:
+            # TODO: Update this to use durations
+
+            # weekday_end = weekday_start + timedelta(
+            #     hours=weekday_hours,
+            #     minutes=weekday_minutes
+            # )
+
+            # weekend_end = weekend_start + timedelta(
+            #     hours=weekend_hours,
+            #     minutes=weekend_minutes
+            # )
+
+            # stat_end = stat_start + timedelta(
+            #     hours=stat_hours,
+            #     minutes=stat_minutes
+            # )
+
             defaults = app_config['calendar_defaults']
 
             weekday_start = defaults['weekday_start'].strftime('%H:%M')
