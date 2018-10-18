@@ -50,8 +50,8 @@ def generate_calendar(user, schedule, cal_loc):
     LOG.debug('Cycling through shifts for %s', user['name'])
 
     for shift in schedule:
-        start_date = shift.start_datetime.strftime('%Y%m%d')
-        comment = shift.comment
+        start_date = shift['start_datetime'].strftime('%Y%m%d')
+        comment = shift['comment']
 
         # try:
         #     start_date = shift.start_datetime.strftime('%Y%m%d')
@@ -68,10 +68,10 @@ def generate_calendar(user, schedule, cal_loc):
 
         if user['full_day'] is False:
             start_time = str(
-                shift.start_datetime.time()
+                shift['start_datetime'].time()
             ).replace(':', '').zfill(6)
-            end_date = shift.end_datetime.strftime('%Y%m%d')
-            end_time = str(shift.end_datetime.time()).replace(':', '').zfill(6)
+            end_date = shift['end_datetime'].strftime('%Y%m%d')
+            end_time = str(shift['end_datetime'].time()).replace(':', '').zfill(6)
 
             # try:
             #     start_time = str(
@@ -99,7 +99,7 @@ def generate_calendar(user, schedule, cal_loc):
         elif user.full_day:
             start_time = '000000'
 
-            end_date = shift.start_datetime.date() + timedelta(days=1)
+            end_date = shift['start_datetime'].date() + timedelta(days=1)
             end_date = end_date.strftime('%Y%m%d')
 
             # try:
@@ -126,7 +126,7 @@ def generate_calendar(user, schedule, cal_loc):
         lines.append('LOCATION:Red Deer Regional Hospital Centre')
         lines.append('SEQUENCE:0')
         lines.append('STATUS:CONFIRMED')
-        lines.append('SUMMARY:{} Shift'.format(shift.shift_code))
+        lines.append('SUMMARY:{} Shift'.format(shift['shift_code']))
         lines.append('TRANSP:TRANSPARENT')
 
         if user['reminder'] is not None:
@@ -134,18 +134,18 @@ def generate_calendar(user, schedule, cal_loc):
             if user.reminder == 0:
                 alarm_description = (
                     'DESCRIPTION:{} shift starting now'
-                ).format(shift.shift_code)
+                ).format(shift['shift_code'])
             elif user.reminder == 1:
                 alarm_description = (
                     'DESCRIPTION:{} shift starting in {} minute'
-                ).format(shift.shift_code, user.reminder)
+                ).format(shift['shift_code'], user['reminder'])
             else:
                 alarm_description = (
                     'DESCRIPTION:{} shift starting in {} minutes'
-                ).format(shift.shift_code, user.reminder)
+                ).format(shift['shift_code'], user['reminder'])
 
             lines.append('BEGIN:VALARM')
-            lines.append('TRIGGER:-PT{}M'.format(user.reminder))
+            lines.append('TRIGGER:-PT{}M'.format(user['reminder']))
             lines.append('ACTION:DISPLAY')
             lines.append(alarm_description)
             lines.append('END:VALARM')

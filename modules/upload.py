@@ -36,11 +36,11 @@ def upload_user_schedule(user_id, schedule, app_config):
     for shift in schedule:
         post_data.append({
             'sb_user': user_id,
-            'date': shift.start_datetime.strftime('%Y-%m-%d'),
+            'date': shift['start_datetime'].strftime('%Y-%m-%d'),
             'shift_code': (
-                shift.django_shift['id'] if shift.django_shift else ''
+                shift['shift_code_fk'] if shift['shift_code_fk'] else ''
             ),
-            'text_shift_code': shift.shift_code,
+            'text_shift_code': shift['shift_code'],
         })
 
     response = requests.post(

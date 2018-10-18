@@ -9,24 +9,10 @@ import requests
 
 from modules.custom_exceptions import ScheduleError
 from modules.extract_schedule import generate_raw_schedule
+from modules.utils import convert_duration_to_hours_minutes
 
 
 LOG = logging.getLogger(__name__)
-
-class FormattedShift():
-    """Holds expanded details on a user's specified shift"""
-
-    def __init__(self, code, start_datetime, end_datetime, comment, django):
-        self.shift_code = code
-        self.start_datetime = start_datetime
-        self.end_datetime = end_datetime
-        self.comment = comment
-        self.django_shift = django
-
-    def __str__(self):
-        return "{} ({} to {})".format(
-            self.shift_code, self.start_datetime, self.end_datetime
-        )
 
 def retrieve_old_schedule(app_config, user_id):
     """Retrieves the user's previous schedule from the database"""
@@ -140,31 +126,31 @@ def get_default_start_end_datetimes(start_date, defaults, stat_match, dow):
             start_date, defaults['stat_start']
         )
 
-        end_datetime = start_datetime + timedelta(
-            hours=defaults['stat_hours'],
-            minutes=defaults['stat_minutes']
+        hours, minutes = convert_duration_to_hours_minutes(
+            defaults['stat_duration']
         )
     elif dow >= 5:
         start_datetime = datetime.combine(
             start_date, defaults['weekend_start']
         )
 
-        end_datetime = start_datetime + timedelta(
-            hours=defaults['weekend_hours'],
-            minutes=defaults['weekend_minutes']
+        hours, minutes = convert_duration_to_hours_minutes(
+            defaults['weekend_duration']
         )
     else:
         start_datetime = datetime.combine(
             start_date, defaults['weekday_start']
         )
 
-        end_datetime = start_datetime + timedelta(
-            hours=defaults['weekday_hours'],
-            minutes=defaults['weekday_minutes']
+        hours, minutes = convert_duration_to_hours_minutes(
+            defaults['weekday_duration']
         )
 
-    return start_datetime, end_datetime
+    end_datetime = start_datetime + timedelta(
+        hours=hours, minutes=minutes
+    )
 
+    return start_datetime, end_datetime
 
 class Schedule():
     """Holds all the users shifts and any noted modifications"""
@@ -268,7 +254,7 @@ class Schedule():
 
         for shift in self.shifts:
             key_match = False
-            shift_date = shift.start_datetime.date()
+            shift_date = shift['start_datetime'].date()
 
             for key in groupings:
                 if shift_date == key:
@@ -356,10 +342,13 @@ class Schedule():
             )
 
         # Compile all details into the final shift details
-        self.shifts.append(FormattedShift(
-            shift['shift_code'], start_datetime, end_datetime,
-            shift['comment'], db_code_id
-        ))
+        self.shifts.append({
+            'shift_code': shift['shift_code'],
+            'start_datetime': start_datetime,
+            'end_datetime': end_datetime,
+            'comment': shift['comment'],
+            'shift_code_fk': db_code_id
+        })
 
     def determine_schedule_additions(self):
         """Determines which shifts are additions."""
@@ -397,7 +386,7 @@ class Schedule():
                 if len(old_shifts) == len(new_shifts):
                     for old in old_shifts:
                         for new in new_shifts:
-                            if old['shift_code'] == new.shift_code:
+                            if old['shift_code'] == new['shift_code']:
                                 shift_match.append(True)
 
                 # If the number of Trues equal length of old_shifts,
@@ -406,7 +395,9 @@ class Schedule():
                     old_codes = '/'.join(
                         str(s['shift_code']) for s in old_shifts
                     )
-                    new_codes = '/'.join(str(s.shift_code) for s in new_shifts)
+                    new_codes = '/'.join(
+                        str(s['shift_code']) for s in new_shifts
+                    )
                     msg = '{} - {} changed to {}'.format(
                         old_date, old_codes, new_codes
                     )
