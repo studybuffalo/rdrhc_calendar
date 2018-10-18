@@ -194,7 +194,7 @@ def retrieve_old_schedule(app_config, user_id):
 
     return old_schedule
 
-def generate_formatted_schedule(user, app_config, raw_schedule):
+def generate_formatted_schedule(user, app_config, raw_schedule, old_schedule):
     """Takes the raw schedule and returns the required formatted objects"""
 
     def is_stat(stat_holidays, date):
@@ -377,9 +377,6 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
 
 
     # Determine the shift additions, deletions, and changes
-    # Retrieve the old schedule
-    old_schedule = retrieve_old_schedule(app_config, user['id'])
-
     # Generate a new schedule listing organized by date
     new_by_date = group_schedule_by_date(schedule)
 
@@ -463,16 +460,12 @@ def generate_formatted_schedule(user, app_config, raw_schedule):
 def assemble_schedule(app_config, excel_files, user):
     """Assembles all the schedule details for provided user."""
 
-    raw_schedule = generate_raw_schedule(app_config, excel_files, user)
+    old_schedule = retrieve_old_schedule(app_config, user['id'])
 
-    formatted_schedule = generate_formatted_schedule(
-        user, app_config, raw_schedule,
+    new_schedule_raw = generate_raw_schedule(app_config, excel_files, user)
+
+    new_schedule_formatted = generate_formatted_schedule(
+        user, app_config, new_schedule_raw, old_schedule
     )
 
-    # LOG.warning(
-    #     'Unable to find %s (role = %s) in the Excel schedule',
-    #     user['name'],
-    #     role
-    # )
-
-    return formatted_schedule
+    return new_schedule_formatted
