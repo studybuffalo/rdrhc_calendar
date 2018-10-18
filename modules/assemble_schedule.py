@@ -28,15 +28,6 @@ class FormattedShift():
             self.shift_code, self.start_datetime, self.end_datetime
         )
 
-class EmailShift():
-    """Holds details on shift modifications for emailing to the user"""
-    date = 0
-    msg = ""
-
-    def __init__(self, date, msg):
-        self.date = date
-        self.msg = msg
-
 def retrieve_old_schedule(app_config, user_id):
     """Retrieves the user's previous schedule from the database"""
 
@@ -87,6 +78,93 @@ def retrieve_old_schedule(app_config, user_id):
                 }]
 
     return old_schedule
+
+def is_stat(check_date, stat_list):
+    """Checks if provided date is a stat in stat_list"""
+    for holiday_date in stat_list:
+        if check_date == holiday_date:
+            return True
+
+    return False
+
+def get_start_time_duration(stat_match, dow, code):
+    """Returns proper start time and duration based on date."""
+    if stat_match:
+        start_time = code['stat_start']
+        duration = code['stat_duration']
+    elif dow == 0:
+        start_time = code['monday_start']
+        duration = code['monday_duration']
+    elif dow == 1:
+        start_time = code['tuesday_start']
+        duration = code['tuesday_duration']
+    elif dow == 2:
+        start_time = code['wednesday_start']
+        duration = code['wednesday_duration']
+    elif dow == 3:
+        start_time = code['thursday_start']
+        duration = code['thursday_duration']
+    elif dow == 4:
+        start_time = code['friday_start']
+        duration = code['friday_duration']
+    elif dow == 5:
+        start_time = code['saturday_start']
+        duration = code['saturday_duration']
+    elif dow == 6:
+        start_time = code['sunday_start']
+        duration = code['sunday_duration']
+    else:
+        start_time = None
+        duration = None
+
+    return start_time, duration
+
+def get_start_end_datetimes(start_date, start_time, duration):
+    """Calculates and returns the start and end datetimes."""
+    hours = int(duration)
+    minutes = int((duration*60) % 60)
+
+    start_datetime = datetime.combine(start_date, start_time)
+
+    end_datetime = start_datetime + timedelta(
+        hours=hours,
+        minutes=minutes
+    )
+
+    return start_datetime, end_datetime
+
+def get_default_start_end_datetimes(start_date, defaults, stat_match, dow):
+    """Determines the proper default start & end datetimes touse."""
+    if stat_match:
+        start_datetime = datetime.combine(
+            start_date, defaults['stat_start']
+        )
+
+        end_datetime = start_datetime + timedelta(
+            hours=defaults['stat_hours'],
+            minutes=defaults['stat_minutes']
+        )
+    elif dow >= 5:
+        start_datetime = datetime.combine(
+            start_date, defaults['weekend_start']
+        )
+
+        end_datetime = start_datetime + timedelta(
+            hours=defaults['weekend_hours'],
+            minutes=defaults['weekend_minutes']
+        )
+    else:
+        start_datetime = datetime.combine(
+            start_date, defaults['weekday_start']
+        )
+
+        end_datetime = start_datetime + timedelta(
+            hours=defaults['weekday_hours'],
+            minutes=defaults['weekday_minutes']
+        )
+
+    return start_datetime, end_datetime
+
 
 class Schedule():
     """Holds all the users shifts and any noted modifications"""
@@ -184,20 +262,11 @@ class Schedule():
 
         return stat_holidays
 
-    def _is_stat(self, stat_holidays, date):
-        """Determines if the date is a stat holiday or not"""
-
-        for holiday in stat_holidays:
-            if date == holiday:
-                return True
-
-        return False
-
-    def _group_schedule_by_date(self, schedule):
+    def _group_schedule_by_date(self):
         """Groups schedule shifts by date"""
         groupings = {}
 
-        for shift in schedule:
+        for shift in self.shifts:
             key_match = False
             shift_date = shift.start_datetime.date()
 
@@ -224,163 +293,106 @@ class Schedule():
 
         return groupings
 
-    def process_new_schedule(self):
-        """Generates a new schedule and identifies important shifts."""
+    def _determine_shift_details(self, shift, shift_code_list, stat_holidays):
+        is_null = True
+        is_missing = True
+        db_code_id = None
+        dow = shift['start_date'].weekday()
+        stat_match = is_stat(shift['start_date'], stat_holidays)
 
-        # Get shift codes/times for user
-        shift_code_list = self._retrieve_shift_codes()
+        for code in shift_code_list:
+            if shift['shift_code'] == code['code']:
+                # Shift code exists for user
+                is_missing = False
+                db_code_id = code
 
-        # Get all the stat holidays for the date range of the raw_schedule
-        stat_holidays = self._retrieve_stat_holidays()
+                # Codes without start times are considered null shifts
+                start_time, duration = get_start_time_duration(
+                    stat_match, dow, code
+                )
 
-        # Assign start and end date/times to user's shifts
-        schedule = []
-        null_shifts = []
-        missing_shifts = []
-        missing_codes_for_upload = set()
+                if start_time:
+                    is_null = False
 
-        for shift in self.schedule_new:
-            # Search for a shift match
-            shift_match = False
+                    start_datetime, end_datetime = get_start_end_datetimes(
+                        shift['start_date'], start_time, duration
+                    )
 
-            # Record the day of the week
-            dow = shift['start_date'].weekday()
+                break
 
-            # Check if this is a stat holiday
-            stat_match = self._is_stat(stat_holidays, shift['start_date'])
+        # If no shift match, provide default values
+        if is_missing:
+            is_null = False
 
-            for code in shift_code_list:
-                # If matched, find the proper day to base shift details on
+            start_datetime, end_datetime = get_default_start_end_datetimes(
+                shift['start_date'],
+                self.config['calendar_defaults'],
+                stat_match,
+                dow
+            )
 
-                if shift['shift_code'] == code['code']:
-                    shift_match = True
-
-                    # Apply proper start time and duration
-                    if stat_match:
-                        start_time = code['stat_start']
-                        duration = code['stat_duration']
-                    elif dow == 0:
-                        start_time = code['monday_start']
-                        duration = code['monday_duration']
-                    elif dow == 1:
-                        start_time = code['tuesday_start']
-                        duration = code['tuesday_duration']
-                    elif dow == 2:
-                        start_time = code['wednesday_start']
-                        duration = code['wednesday_duration']
-                    elif dow == 3:
-                        start_time = code['thursday_start']
-                        duration = code['thursday_duration']
-                    elif dow == 4:
-                        start_time = code['friday_start']
-                        duration = code['friday_duration']
-                    elif dow == 5:
-                        start_time = code['saturday_start']
-                        duration = code['saturday_duration']
-                    elif dow == 6:
-                        start_time = code['sunday_start']
-                        duration = code['sunday_duration']
-
-                    if start_time:
-                        # Shift has time, process as normal
-
-                        # Convert the decimal hours duration to h, m, and s
-                        hours = int(duration)
-                        minutes = int((duration*60) % 60)
-
-                        start_datetime = datetime.combine(
-                            shift['start_date'], start_time
-                        )
-
-                        end_datetime = start_datetime + timedelta(
-                            hours=hours,
-                            minutes=minutes
-                        )
-
-                        schedule.append(FormattedShift(
-                            shift['shift_code'], start_datetime, end_datetime,
-                            shift['comment'], code
-                        ))
-                    else:
-                        # Shift has no times - don't add to schedule and mark
-                        # it in the null shift list
-                        msg = '{} - {}'.format(
-                            shift.start_date.strftime('%Y-%m-%d'),
-                            shift['shift_code']
-                        )
-
-                        null_shifts.append(
-                            EmailShift(shift['start_date'], msg)
-                        )
-
-                    # End loop
-                    break
-
-            # If no shift match, provide default values
-            if shift_match is False:
-                # Add missing shift to the Missing shift list
-                msg = '{} - {}'.format(
+        # Record the details for this null code
+        if is_null:
+            self.notification_details['null'].append({
+                'date': shift['start_date'],
+                'msg': '{} - {}'.format(
                     shift['start_date'].strftime('%Y-%m-%d'),
                     shift['shift_code']
                 )
+            })
 
-                missing_shifts.append(
-                    EmailShift(shift['start_date'], msg)
+        # Record the details for this missing code
+        if is_missing:
+            self.notification_details['missing'].append({
+                'date': shift['start_date'],
+                'msg': '{} - {}'.format(
+                    shift['start_date'].strftime('%Y-%m-%d'),
+                    shift['shift_code']
+                )
+            })
+
+            self.notification_details['missing_upload'].add(
+                shift['shift_code']
+            )
+
+        # Compile all details into the final shift details
+        self.shifts.append(FormattedShift(
+            shift['shift_code'], start_datetime, end_datetime,
+            shift['comment'], db_code_id
+        ))
+
+    def determine_schedule_additions(self):
+        """Determines which shifts are additions."""
+        for new_date, new_shifts in self.schedule_new_by_date.items():
+            if new_date not in self.schedule_old:
+                new_codes = '/'.join(str(s['shift_code']) for s in new_shifts)
+                msg = '{} - {}'.format(
+                    new_date.strftime('%Y-%m-%d'), new_codes
                 )
 
-                # Add the missing code to the missing code set
-                missing_codes_for_upload.add(shift['shift_code'])
+                self.notification_details['additions'].append(
+                    {'date': new_date, 'msg': msg}
+                )
 
-                # Set default times
-                defaults = self.config['calendar_defaults']
-
-                if stat_match:
-                    start_datetime = datetime.combine(
-                        shift['start_date'], defaults['stat_start']
-                    )
-
-                    end_datetime = start_datetime + timedelta(
-                        hours=defaults['stat_hours'],
-                        minutes=defaults['stat_minutes']
-                    )
-                elif dow >= 5:
-                    start_datetime = datetime.combine(
-                        shift['start_date'], defaults['weekend_start']
-                    )
-
-                    end_datetime = start_datetime + timedelta(
-                        hours=defaults['weekend_hours'],
-                        minutes=defaults['weekend_minutes']
-                    )
-                else:
-                    start_datetime = datetime.combine(
-                        shift['start_date'], defaults['weekday_start']
-                    )
-
-                    end_datetime = start_datetime + timedelta(
-                        hours=defaults['weekday_hours'],
-                        minutes=defaults['weekday_minutes']
-                    )
-
-                schedule.append(FormattedShift(
-                    shift['shift_code'], start_datetime, end_datetime,
-                    shift['comment'], None
-                ))
-
-
-        # Determine the shift additions, deletions, and changes
-        # Generate a new schedule listing organized by date
-        new_by_date = self._group_schedule_by_date(schedule)
-
-        # Check if there are any deletions or changes
-        deletions = []
-        changes = []
-
+    def determine_schedule_deletions(self):
+        """Determines which shifts are deletions."""
         for old_date, old_shifts in self.schedule_old.items():
-            shift_match = []
+            if old_date not in self.schedule_new_by_date:
+                old_codes = '/'.join(str(s['shift_code']) for s in old_shifts)
+                msg = '{} - {}'.format(old_date, old_codes)
 
-            if old_date in new_by_date:
-                new_shifts = new_by_date[old_date]
+                self.notification_details['deletions'].append(
+                    {'date': old_date, 'msg': msg}
+                )
+
+    def determine_schedule_changes(self):
+        """Determines which shifts are changes."""
+        for old_date, old_shifts in self.schedule_old.items():
+            if old_date in self.schedule_new_by_date:
+                # Shift exists for both old and new - check for changes
+                shift_match = []
+
+                new_shifts = self.schedule_new_by_date[old_date]
 
                 if len(old_shifts) == len(new_shifts):
                     for old in old_shifts:
@@ -399,81 +411,90 @@ class Schedule():
                         old_date, old_codes, new_codes
                     )
 
-                    changes.append(EmailShift(old_date, msg))
-            else:
-                # Shift was deleted
-                old_codes = '/'.join(str(s['shift_code']) for s in old_shifts)
-                msg = '{} - {}'.format(old_date, old_codes)
+                    self.notification_details['changes'].append(
+                        {'date': old_date, 'msg': msg}
+                    )
 
-                deletions.append(EmailShift(old_date, msg))
+    def clean_missing(self):
+        """Remove missing shifts not in additions or changes list.
 
-        # Checks if there are any new additions
-        additions = []
+        The user would have already been notified of these shifts.
+        """
+        updated_missing = []
 
-        for new_date, new_shifts in new_by_date.items():
-            shift_match = []
+        for missing_shift in self.notification_details['missing']:
+            for change in self.notification_details['changes']:
+                if missing_shift['date'] == change['date']:
+                    updated_missing.append(missing_shift)
 
-            if new_date not in self.schedule_old:
-                new_codes = '/'.join(str(s['shift_code']) for s in new_shifts)
-                msg = '{} - {}'.format(
-                    new_date.strftime('%Y-%m-%d'), new_codes
-                )
+            for addition in self.notification_details['additions']:
+                if missing_shift['date'] == addition['date']:
+                    updated_missing.append(missing_shift)
 
-                additions.append(EmailShift(new_date, msg))
+        self.notification_details['missing'] = updated_missing
 
-        # Removes missing shifts not in the additions or changes lists
-        # (user will have already been notified on these shifts)
-        missing = []
+    def clean_null(self):
+        """Remove null shifts not in additions or changes list.
 
-        for missing_shift in missing_shifts:
-            for change in changes:
-                if missing_shift.date == change.date:
-                    missing.append(missing_shift)
-
-            for addition in additions:
-                if missing_shift.date == addition.date:
-                    missing.append(missing_shift)
-
-        null = []
+        The user would have already been notified of these shifts.
+        """
+        updated_null = []
 
         # Removes null shifts not in the additions or changes lists
         # (user will have already been notified on these shifts)
-        for null_shift in null_shifts:
-            for change in changes:
-                if null_shift.date == change.date:
-                    null.append(null_shift)
+        for null_shift in self.notification_details['null']:
+            for change in self.notification_details['changes']:
+                if null_shift['date'] == change['date']:
+                    updated_null.append(null_shift)
 
-            for addition in additions:
-                if null_shift.date == addition.date:
-                    null.append(null_shift)
+            for addition in self.notification_details['additions']:
+                if null_shift['date'] == addition['date']:
+                    updated_null.append(null_shift)
 
-        # Saves all items to the object properties
-        self.shifts = schedule
-        self.additions = additions
-        self.deletions = deletions
-        self.changes = changes
-        self.missing = missing
-        self.null = null
-        self.missing_upload = missing_codes_for_upload
+        self.notification_details['null'] = updated_null
+
+    def process_new_schedule(self):
+        """Generates a new schedule and identifies important shifts."""
+
+        # Get shift codes/times for user
+        shift_code_list = self._retrieve_shift_codes()
+
+        # Get all the stat holidays for the date range of the raw_schedule
+        stat_holidays = self._retrieve_stat_holidays()
+
+        # Generate the users shift details
+        for shift in self.schedule_new:
+            self._determine_shift_details(
+                shift, shift_code_list, stat_holidays
+            )
+
+        self.schedule_new_by_date = self._group_schedule_by_date()
+        self.determine_schedule_additions()
+        self.determine_schedule_deletions()
+        self.determine_schedule_changes()
+        self.clean_missing()
+        self.clean_null()
 
     def __init__(self, schedule_old, schedule_new, user, app_config):
         self.schedule_old = schedule_old
         self.schedule_new = schedule_new
+        self.schedule_new_by_date = []
         self.user = user
         self.config = app_config
-        self.shifts = None
-        self.additions = None
-        self.deletions = None
-        self.changes = None
-        self.missing = None
-        self.null = None
-        self.missing_upload = None
+        self.shifts = []
+        self.notification_details = {
+            'additions': [],
+            'deletions': [],
+            'changes': [],
+            'missing': [],
+            'null': [],
+            'missing_upload': set(),
+        }
 
 def assemble_schedule(app_config, excel_files, user):
     """Assembles all the schedule details for provided user."""
 
     old_schedule = retrieve_old_schedule(app_config, user['id'])
-
     new_schedule_raw = generate_raw_schedule(app_config, excel_files, user)
 
     new_schedule = Schedule(new_schedule_raw, old_schedule, user, app_config)
