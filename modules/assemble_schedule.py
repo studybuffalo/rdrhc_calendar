@@ -225,7 +225,7 @@ class Schedule():
         return groupings
 
     def process_new_schedule(self):
-        """Takes the raw schedule and returns the required formatted objects"""
+        """Formats a new schedule and identifies important shifts."""
 
         # Get shift codes/times for user
         shift_code_list = self._retrieve_shift_codes()
