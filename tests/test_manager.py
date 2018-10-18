@@ -1,5 +1,4 @@
 """Unit tests for the manager module."""
-# pylint: disable=missing-docstring
 
 from unittest.mock import patch
 
@@ -7,19 +6,15 @@ import requests
 
 from modules.manager import retrieve_users
 
+from tests.utils import MockRequest404Response
+
 
 APP_CONFIG = {
     'api_url': 'https://127.0.0.1/api/',
     'api_headers': {'user-agent': 'rdrhc-calendar',}
 }
 
-class MockUserGet404Response():
-    def __init__(self, url, headers):
-        self.url = url
-        self.headers = headers
-        self.status_code = 404
-
-@patch('requests.get', MockUserGet404Response)
+@patch('requests.get', MockRequest404Response)
 def test_404_error_on_user_retrieval():
     try:
         retrieve_users(APP_CONFIG)
