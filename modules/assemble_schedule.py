@@ -254,14 +254,14 @@ class Schedule():
 
         for shift in self.shifts:
             key_match = False
-            shift_date = shift['start_datetime'].date()
+            shift_date = shift['start_datetime'].strftime('%Y-%m-%d')
 
             for key in groupings:
                 if shift_date == key:
                     key_match = True
 
                     # Do not add 'X' shifts
-                    if shift['shift_code'] != 'X':
+                    if shift['shift_code'].upper() != 'X':
                         # Append this shift to this key
                         groupings[shift_date].append({
                             'shift_code': shift['shift_code'],
@@ -270,14 +270,14 @@ class Schedule():
 
             if key_match is False:
                 # Do not add 'X' shifts
-                if shift['shift_code'] != 'X':
+                if shift['shift_code'].upper() != 'X':
                     # Append a new key to the groupings
                     groupings[shift_date] = [{
                         'shift_code': shift['shift_code'],
                         'start_date': shift_date
                     }]
 
-        return groupings
+        self.schedule_new_by_date = groupings
 
     def _determine_shift_details(self, shift, shift_code_list, stat_holidays):
         is_null = True
@@ -287,10 +287,10 @@ class Schedule():
         stat_match = is_stat(shift['start_date'], stat_holidays)
 
         for code in shift_code_list:
-            if shift['shift_code'] == code['code']:
+            if shift['shift_code'].upper() == code['code'].upper():
                 # Shift code exists for user
                 is_missing = False
-                db_code_id = code
+                db_code_id = code['id']
 
                 # Codes without start times are considered null shifts
                 start_time, duration = get_start_time_duration(
@@ -306,10 +306,10 @@ class Schedule():
 
                 break
 
-        # If no shift match, provide default values
         if is_missing:
             is_null = False
 
+            # If no shift match, provide default values
             start_datetime, end_datetime = get_default_start_end_datetimes(
                 shift['start_date'],
                 self.config['calendar_defaults'],
@@ -317,18 +317,7 @@ class Schedule():
                 dow
             )
 
-        # Record the details for this null code
-        if is_null:
-            self.notification_details['null'].append({
-                'date': shift['start_date'],
-                'msg': '{} - {}'.format(
-                    shift['start_date'].strftime('%Y-%m-%d'),
-                    shift['shift_code']
-                )
-            })
-
-        # Record the details for this missing code
-        if is_missing:
+            # Record the details for this missing code
             self.notification_details['missing'].append({
                 'date': shift['start_date'],
                 'msg': '{} - {}'.format(
@@ -341,14 +330,24 @@ class Schedule():
                 shift['shift_code']
             )
 
-        # Compile all details into the final shift details
-        self.shifts.append({
-            'shift_code': shift['shift_code'],
-            'start_datetime': start_datetime,
-            'end_datetime': end_datetime,
-            'comment': shift['comment'],
-            'shift_code_fk': db_code_id
-        })
+        # Add any not-null shift
+        if is_null is False:
+            self.shifts.append({
+                'shift_code': shift['shift_code'],
+                'start_datetime': start_datetime,
+                'end_datetime': end_datetime,
+                'comment': shift['comment'],
+                'shift_code_fk': db_code_id
+            })
+        else:
+            # Record the details for this null code
+            self.notification_details['null'].append({
+                'date': shift['start_date'],
+                'msg': '{} - {}'.format(
+                    shift['start_date'].strftime('%Y-%m-%d'),
+                    shift['shift_code']
+                )
+            })
 
     def determine_schedule_additions(self):
         """Determines which shifts are additions."""
@@ -459,7 +458,7 @@ class Schedule():
                 shift, shift_code_list, stat_holidays
             )
 
-        self.schedule_new_by_date = self._group_schedule_by_date()
+        self._group_schedule_by_date()
         self.determine_schedule_additions()
         self.determine_schedule_deletions()
         self.determine_schedule_changes()

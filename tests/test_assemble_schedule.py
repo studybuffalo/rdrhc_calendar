@@ -1,7 +1,7 @@
 """Unit tests for the manager module."""
 # pylint: disable=protected-access
 
-from datetime import datetime, time
+from datetime import datetime, date, time
 from decimal import Decimal
 from unittest.mock import patch
 
@@ -14,6 +14,14 @@ from tests.utils import MockRequest404Response, MockRequest200Response
 APP_CONFIG = {
     'api_url': 'https://127.0.0.1/api/',
     'api_headers': {'user-agent': 'rdrhc-calendar',},
+    'calendar_defaults': {
+        'weekday_start': time(1, 0, 0),
+        'weekday_duration': Decimal(1.1),
+        'weekend_start': time(5, 0, 0),
+        'weekend_duration': Decimal(5.5),
+        'stat_start': time(9, 0, 0),
+        'stat_duration': Decimal(9.9),
+    }
 }
 
 USER = {
@@ -52,16 +60,75 @@ EXTRACTED_SCHEDULE = [
     },
 ]
 
-USER_SHIFT_CODES = {
-    'stat_start': time(1, 0, 0), 'stat_duration': Decimal(1.1),
-    'monday_start': time(2, 0, 0), 'monday_duration': Decimal(2.2),
-    'tuesday_start': time(3, 0, 0), 'tuesday_duration': Decimal(3.3),
-    'wednesday_start': time(4, 0, 0), 'wednesday_duration': Decimal(4.4),
-    'thursday_start': time(5, 0, 0), 'thursday_duration': Decimal(5.5),
-    'friday_start': time(6, 0, 0), 'friday_duration': Decimal(6.6),
-    'saturday_start': time(7, 0, 0), 'saturday_duration': Decimal(7.7),
-    'sunday_start': time(8, 0, 0), 'sunday_duration': Decimal(8.8),
-}
+NEW_SCHEDULE = [
+    {
+        'shift_code': 'C1',
+        'start_datetime': datetime(2018, 1, 1, 1, 0),
+        'end_datetime': datetime(2018, 1, 1, 2, 0),
+        'comment': 'SUPER STAT',
+        'shift_code_fk': 1,
+    },
+    {
+        'shift_code': 'C1F',
+        'start_datetime': datetime(2018, 2, 1, 2, 0),
+        'end_datetime': datetime(2018, 2, 1, 3, 0),
+        'comment': '',
+        'shift_code_fk': 2,
+    },
+    {
+        'shift_code': 'C1',
+        'start_datetime': datetime(2018, 3, 1, 3, 0),
+        'end_datetime': datetime(2018, 3, 1, 4, 0),
+        'comment': '',
+        'shift_code_fk': None,
+    },
+    {
+        'shift_code': 'D1',
+        'start_datetime': datetime(2018, 4, 1, 4, 0),
+        'end_datetime': datetime(2018, 4, 1, 5, 0),
+        'comment': '',
+        'shift_code_fk': None,
+    },
+    {
+        'shift_code': 'C1',
+        'start_datetime': datetime(2018, 5, 1, 5, 0),
+        'end_datetime': datetime(2018, 5, 1, 6, 0),
+        'comment': '',
+        'shift_code_fk': 1,
+    },
+    {
+        'shift_code': 'C2',
+        'start_datetime': datetime(2018, 5, 1, 7, 0),
+        'end_datetime': datetime(2018, 5, 1, 6, 0),
+        'comment': '',
+        'shift_code_fk': None,
+    },
+]
+
+USER_SHIFT_CODES = [
+    {
+        'id': 1, 'code': 'C1', 'sb_user': 1, 'role': 'p',
+        'stat_start': time(1, 0, 0), 'stat_duration': Decimal('1.1'),
+        'monday_start': time(2, 0, 0), 'monday_duration': Decimal('2.2'),
+        'tuesday_start': time(3, 0, 0), 'tuesday_duration': Decimal('3.3'),
+        'wednesday_start': time(4, 0, 0), 'wednesday_duration': Decimal('4.4'),
+        'thursday_start': time(5, 0, 0), 'thursday_duration': Decimal('5.5'),
+        'friday_start': time(6, 0, 0), 'friday_duration': Decimal('6.6'),
+        'saturday_start': time(7, 0, 0), 'saturday_duration': Decimal('7.7'),
+        'sunday_start': time(8, 0, 0), 'sunday_duration': Decimal('8.8'),
+    },
+    {
+        'id': 2, 'code': 'VR', 'sb_user': 1, 'role': 'p',
+        'stat_start': None, 'stat_duration': None,
+        'monday_start': None, 'monday_duration': None,
+        'tuesday_start': None, 'tuesday_duration':None,
+        'wednesday_start': None, 'wednesday_duration': None,
+        'thursday_start': None, 'thursday_duration': None,
+        'friday_start': None, 'friday_duration': None,
+        'saturday_start': None, 'saturday_duration': None,
+        'sunday_start': None, 'sunday_duration': None,
+    },
+]
 
 STAT_HOLIDAYS = [
     datetime(2018, 1, 1), datetime(2018, 2, 19), datetime(2018, 3, 30),
@@ -161,79 +228,79 @@ def test_is_stat_is_false_on_non_stat():
 def test_get_start_time_duration_stat():
     """Checks get_start_time_duration returns proper stat values."""
     start_time, duration = assemble_schedule.get_start_time_duration(
-        True, 1, USER_SHIFT_CODES
+        True, 1, USER_SHIFT_CODES[0]
     )
 
-    assert start_time == USER_SHIFT_CODES['stat_start']
-    assert duration == USER_SHIFT_CODES['stat_duration']
+    assert start_time == USER_SHIFT_CODES[0]['stat_start']
+    assert duration == USER_SHIFT_CODES[0]['stat_duration']
 
 def test_get_start_time_duration_monday():
     """Checks get_start_time_duration returns proper Monday values."""
     start_time, duration = assemble_schedule.get_start_time_duration(
-        False, 0, USER_SHIFT_CODES
+        False, 0, USER_SHIFT_CODES[0]
     )
 
-    assert start_time == USER_SHIFT_CODES['monday_start']
-    assert duration == USER_SHIFT_CODES['monday_duration']
+    assert start_time == USER_SHIFT_CODES[0]['monday_start']
+    assert duration == USER_SHIFT_CODES[0]['monday_duration']
 
 def test_get_start_time_duration_tuesday():
     """Checks get_start_time_duration returns proper Tuesday values."""
     start_time, duration = assemble_schedule.get_start_time_duration(
-        False, 1, USER_SHIFT_CODES
+        False, 1, USER_SHIFT_CODES[0]
     )
 
-    assert start_time == USER_SHIFT_CODES['tuesday_start']
-    assert duration == USER_SHIFT_CODES['tuesday_duration']
+    assert start_time == USER_SHIFT_CODES[0]['tuesday_start']
+    assert duration == USER_SHIFT_CODES[0]['tuesday_duration']
 
 def test_get_start_time_duration_wednesday():
     """Checks get_start_time_duration returns proper Wednesday values."""
     start_time, duration = assemble_schedule.get_start_time_duration(
-        False, 2, USER_SHIFT_CODES
+        False, 2, USER_SHIFT_CODES[0]
     )
 
-    assert start_time == USER_SHIFT_CODES['wednesday_start']
-    assert duration == USER_SHIFT_CODES['wednesday_duration']
+    assert start_time == USER_SHIFT_CODES[0]['wednesday_start']
+    assert duration == USER_SHIFT_CODES[0]['wednesday_duration']
 
 def test_get_start_time_duration_thursday():
     """Checks get_start_time_duration returns proper Thursday values."""
     start_time, duration = assemble_schedule.get_start_time_duration(
-        False, 3, USER_SHIFT_CODES
+        False, 3, USER_SHIFT_CODES[0]
     )
 
-    assert start_time == USER_SHIFT_CODES['thursday_start']
-    assert duration == USER_SHIFT_CODES['thursday_duration']
+    assert start_time == USER_SHIFT_CODES[0]['thursday_start']
+    assert duration == USER_SHIFT_CODES[0]['thursday_duration']
 
 def test_get_start_time_duration_friday():
     """Checks get_start_time_duration returns proper Friday values."""
     start_time, duration = assemble_schedule.get_start_time_duration(
-        False, 4, USER_SHIFT_CODES
+        False, 4, USER_SHIFT_CODES[0]
     )
 
-    assert start_time == USER_SHIFT_CODES['friday_start']
-    assert duration == USER_SHIFT_CODES['friday_duration']
+    assert start_time == USER_SHIFT_CODES[0]['friday_start']
+    assert duration == USER_SHIFT_CODES[0]['friday_duration']
 
 def test_get_start_time_duration_saturday():
     """Checks get_start_time_duration returns proper Satuday values."""
     start_time, duration = assemble_schedule.get_start_time_duration(
-        False, 5, USER_SHIFT_CODES
+        False, 5, USER_SHIFT_CODES[0]
     )
 
-    assert start_time == USER_SHIFT_CODES['saturday_start']
-    assert duration == USER_SHIFT_CODES['saturday_duration']
+    assert start_time == USER_SHIFT_CODES[0]['saturday_start']
+    assert duration == USER_SHIFT_CODES[0]['saturday_duration']
 
 def test_get_start_time_duration_sunday():
     """Checks get_start_time_duration returns proper Sunday values."""
     start_time, duration = assemble_schedule.get_start_time_duration(
-        False, 6, USER_SHIFT_CODES
+        False, 6, USER_SHIFT_CODES[0]
     )
 
-    assert start_time == USER_SHIFT_CODES['sunday_start']
-    assert duration == USER_SHIFT_CODES['sunday_duration']
+    assert start_time == USER_SHIFT_CODES[0]['sunday_start']
+    assert duration == USER_SHIFT_CODES[0]['sunday_duration']
 
 def test_get_start_time_duration_blank():
     """Checks get_start_time_duration returns proper blank."""
     start_time, duration = assemble_schedule.get_start_time_duration(
-        False, None, USER_SHIFT_CODES
+        False, None, USER_SHIFT_CODES[0]
     )
 
     assert start_time is None
@@ -247,6 +314,33 @@ def test_get_start_end_datetimes():
 
     assert start == datetime(2018, 1, 1, 7, 0, 0)
     assert end == datetime(2018, 1, 1, 15, 15, 0)
+
+def test_get_default_start_end_datetimes_stat():
+    """Checks get_default_start_end_datetimes returns stat default."""
+    start, end = assemble_schedule.get_default_start_end_datetimes(
+        datetime(2018, 1, 1), APP_CONFIG['calendar_defaults'], True, 0
+    )
+
+    assert start == datetime(2018, 1, 1, 9, 0)
+    assert end == datetime(2018, 1, 1, 18, 54)
+
+def test_get_default_start_end_datetimes_weekday():
+    """Checks get_default_start_end_datetimes returns weekday default."""
+    start, end = assemble_schedule.get_default_start_end_datetimes(
+        datetime(2018, 1, 1), APP_CONFIG['calendar_defaults'], False, 0
+    )
+
+    assert start == datetime(2018, 1, 1, 1, 0)
+    assert end == datetime(2018, 1, 1, 2, 6)
+
+def test_get_default_start_end_datetimes_weekend():
+    """Checks get_default_start_end_datetimes returns weekend default."""
+    start, end = assemble_schedule.get_default_start_end_datetimes(
+        datetime(2018, 1, 1), APP_CONFIG['calendar_defaults'], False, 5
+    )
+
+    assert start == datetime(2018, 1, 1, 5, 0)
+    assert end == datetime(2018, 1, 1, 10, 30)
 
 @patch('requests.get', MockRequest404Response)
 def test_retrieve_shift_codes_404_response():
@@ -313,3 +407,124 @@ def test_retrieve_stat_holidays_with_no_shifts():
     stat_holidays = schedule._retrieve_stat_holidays()
 
     assert len(stat_holidays) == 10
+
+def test_group_schedule_by_date():
+    """Tests that the extracted schedule is properly grouped by date."""
+    schedule = assemble_schedule.Schedule(
+        OLD_SCHEDULE, EXTRACTED_SCHEDULE, USER, APP_CONFIG
+    )
+    schedule.shifts = NEW_SCHEDULE
+    schedule._group_schedule_by_date()
+
+    assert len(schedule.schedule_new_by_date) == 5
+    assert len(schedule.schedule_new_by_date['2018-01-01']) == 1
+    assert len(schedule.schedule_new_by_date['2018-05-01']) == 2
+    assert schedule.schedule_new_by_date['2018-05-01'][1]['shift_code'] == 'C2'
+
+def test_group_schedule_by_date_x_handling():
+    """Tests that the extracted schedule ignores "X" shifts."""
+    schedule = assemble_schedule.Schedule(
+        OLD_SCHEDULE, EXTRACTED_SCHEDULE, USER, APP_CONFIG
+    )
+
+    updated_new_schedule = NEW_SCHEDULE
+    updated_new_schedule.append({
+        'shift_code': 'X',
+        'start_datetime': datetime(2018, 3, 1, 3, 0),
+        'end_datetime': datetime(2018, 3, 1, 4, 0),
+        'comment': '',
+        'shift_code_fk': None,
+    })
+    schedule.shifts = updated_new_schedule
+
+    schedule._group_schedule_by_date()
+
+    assert len(schedule.schedule_new_by_date) == 5
+    assert len(schedule.schedule_new_by_date['2018-03-01']) == 1
+
+def test_determine_shift_details_defined_shift():
+    """Tests assigning details to a defined shift."""
+    schedule = assemble_schedule.Schedule(
+        OLD_SCHEDULE, EXTRACTED_SCHEDULE, USER, APP_CONFIG
+    )
+
+    shift = {
+        'shift_code': 'C1',
+        'start_date': date(2018, 1, 2),
+        'comment': '',
+    }
+
+    schedule._determine_shift_details(shift, USER_SHIFT_CODES, STAT_HOLIDAYS)
+
+    assert len(schedule.shifts) == 1
+    assert schedule.shifts[0]['shift_code'] == 'C1'
+    assert schedule.shifts[0]['start_datetime'] == datetime(2018, 1, 2, 3, 0)
+    assert schedule.shifts[0]['end_datetime'] == datetime(2018, 1, 2, 6, 18)
+    assert schedule.shifts[0]['comment'] == ''
+    assert schedule.shifts[0]['shift_code_fk'] == 1
+
+def test_determine_shift_details_with_comment():
+    """Tests that comments are added to a shift."""
+    schedule = assemble_schedule.Schedule(
+        OLD_SCHEDULE, EXTRACTED_SCHEDULE, USER, APP_CONFIG
+    )
+
+    shift = {
+        'shift_code': 'C1',
+        'start_date': date(2018, 1, 2),
+        'comment': 'TEST',
+    }
+
+    schedule._determine_shift_details(shift, USER_SHIFT_CODES, STAT_HOLIDAYS)
+
+    assert len(schedule.shifts) == 1
+    assert schedule.shifts[0]['comment'] == 'TEST'
+
+def test_determine_shift_details_null_shift():
+    """Tests handling of null shift."""
+    schedule = assemble_schedule.Schedule(
+        OLD_SCHEDULE, EXTRACTED_SCHEDULE, USER, APP_CONFIG
+    )
+
+    shift = {
+        'shift_code': 'vr',
+        'start_date': date(2018, 1, 2),
+        'comment': '',
+    }
+
+    schedule._determine_shift_details(shift, USER_SHIFT_CODES, STAT_HOLIDAYS)
+    null_details = schedule.notification_details['null']
+
+    assert not schedule.shifts
+    assert len(null_details) == 1
+    assert null_details[0]['date'] == date(2018, 1, 2)
+    assert null_details[0]['msg'] == '2018-01-02 - vr'
+
+def test_determine_shift_details_missing_shift():
+    """Tests handling of missing shift."""
+    schedule = assemble_schedule.Schedule(
+        OLD_SCHEDULE, EXTRACTED_SCHEDULE, USER, APP_CONFIG
+    )
+
+    shift = {
+        'shift_code': 'E1',
+        'start_date': date(2018, 1, 2),
+        'comment': '',
+    }
+
+    schedule._determine_shift_details(shift, USER_SHIFT_CODES, STAT_HOLIDAYS)
+    missing = schedule.notification_details['missing']
+    missing_upload = schedule.notification_details['missing_upload']
+
+    assert len(schedule.shifts) == 1
+    assert len(missing) == 1
+    assert len(missing_upload) == 1
+
+    assert schedule.shifts[0]['shift_code'] == 'E1'
+    assert schedule.shifts[0]['start_datetime'] == datetime(2018, 1, 2, 1, 0)
+    assert schedule.shifts[0]['end_datetime'] == datetime(2018, 1, 2, 2, 6)
+    assert schedule.shifts[0]['shift_code_fk'] is None
+
+    assert missing[0]['date'] == date(2018, 1, 2)
+    assert missing[0]['msg'] == '2018-01-02 - E1'
+    assert 'E1' in missing_upload
