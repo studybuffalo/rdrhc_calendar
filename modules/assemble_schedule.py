@@ -301,6 +301,8 @@ class Schedule():
             )
 
         # Add any not-null shift
+        # TODO: Need way to determine if null shift was used
+        # previously in users schedule
         if is_null is False:
             self.shifts.append({
                 'shift_code': shift['shift_code'],
