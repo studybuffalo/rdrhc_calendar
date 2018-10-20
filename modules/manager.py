@@ -72,7 +72,7 @@ def run_program(app_config):
             schedule = None
 
         if schedule:
-            # Upload the schedule data to the Django server
+            # Upload the schedule data to the server
             upload.update_schedule_database(user, schedule.shifts, app_config)
 
             # Generate and the iCal file to the Django server
