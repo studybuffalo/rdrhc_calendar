@@ -54,6 +54,7 @@ def update_first_email_sent_flag(user_id, app_config):
     )
 
     if response.status_code >= 400:
+        print('test')
         raise requests.ConnectionError(
             (
                 'Unable to connect to API ({}) and retrieve '
@@ -62,112 +63,65 @@ def update_first_email_sent_flag(user_id, app_config):
         )
 
 def email_welcome(user, emails, app_config):
-    """Sends a welcome email to any new user"""
+    """Sends a welcome email to any new user."""
+    LOG.debug('Processing data to send user a welcome email')
 
-    # Check if user needs email sent (signed up in past 24 hours)
-    if user['first_email_sent'] is False:
-        LOG.debug('Processing data to send user a welcome email')
+    from_name = app_config['email']['from_name']
+    from_email = app_config['email']['from_email']
+    from_address = formataddr((from_name, from_email))
 
-        from_name = app_config['email']['from_name']
-        from_email = app_config['email']['from_email']
-        from_address = formataddr((from_name, from_email))
+    to_addresses = []
 
-        to_addresses = []
+    for email in emails:
+        to_name = user['name']
+        to_email = email
+        to_address = formataddr((to_name, to_email))
 
-        for email in emails:
-            to_name = user['name']
-            to_email = email
-            to_address = formataddr((to_name, to_email))
+        to_addresses.append(to_address)
 
-            to_addresses.append(to_address)
+    subject = 'Welcome to Your New Online Schedule'
 
-        subject = 'Welcome to Your New Online Schedule'
+    content = MIMEMultipart('alternative')
+    content['From'] = from_address
+    content['To'] = ','.join(to_addresses)
+    content['Subject'] = subject
+    content['List-Unsubscribe'] = '<{}>'.format(
+        app_config['email']['unsubscribe_link']
+    )
 
-        content = MIMEMultipart('alternative')
-        content['From'] = from_address
-        content['To'] = ','.join(to_addresses)
-        content['Subject'] = subject
-        content['List-Unsubscribe'] = '<{}>'.format(
-            app_config['email']['unsubscribe_link']
-        )
+    # Collects text welcome email from template file
+    text_loc = app_config['email']['welcome_text']
 
-        # Collects text welcome email from template file
-        text_loc = app_config['email']['welcome_text']
+    with open(text_loc, 'r') as text_file:
+        text = text_file.read().replace('\n', '\r\n')
 
-        with open(text_loc, 'r') as text_file:
-            text = text_file.read().replace('\n', '\r\n')
+    # Collects html welcome email from template file
+    html_loc = app_config['email']['welcome_html']
 
-        # try:
-        #     with open(text_loc, 'r') as text_file:
-        #         text = text_file.read().replace('\n', '\r\n')
-        # except Exception:
-        #     LOG.warn(
-        #         'Unable to read welcome email text template',
-        #         exc_info=True
-        #     )
-        #     return
+    with open(html_loc, 'r') as html_file:
+        html = html_file.read()
 
-        # Collects html welcome email from template file
-        html_loc = app_config['email']['welcome_html']
+    # Assemble an HTML and plain text version
+    text_body = MIMEText(text, 'plain')
+    html_body = MIMEText(html, 'html')
 
-        with open(html_loc, 'r') as html_file:
-            html = html_file.read()
+    content.attach(text_body)
+    content.attach(html_body)
 
-        # try:
-        #     with open(html_loc, 'r') as html_file:
-        #         html = html_file.read()
-        # except Exception:
-        #     LOG.exception(
-        #         'Unable to read welcome email html template',
-        #         exc_info=True
-        #     )
-        #     return
+    # Attempt to send email
+    if app_config['debug']['email_console']:
+        LOG.debug(content.as_string())
+    else:
+        LOG.info('Sending welcome email to %s', user['name'])
+        server = smtplib.SMTP(app_config['email']['server'])
 
-        # Assemble an HTML and plain text version
-        text_body = MIMEText(text, 'plain')
-        html_body = MIMEText(html, 'html')
+        server.ehlo()
+        server.starttls()
+        server.sendmail(from_address, to_addresses, content.as_string())
+        server.quit()
 
-        content.attach(text_body)
-        content.attach(html_body)
-
-        # Attempt to send email
-        if app_config['debug']['email_console']:
-            LOG.debug(content.as_string())
-        else:
-            LOG.info('Sending welcome email to %s', user['name'])
-            server = smtplib.SMTP(app_config['email']['server'])
-
-            server.ehlo()
-            server.starttls()
-            server.sendmail(from_address, to_addresses, content.as_string())
-            server.quit()
-
-        # Update user profile to mark first_email_sent as true
-        update_first_email_sent_flag(user['id'], app_config)
-
-        # try:
-        #     if app_config['debug']['email_console']:
-        #         LOG.debug(content.as_string())
-        #     else:
-        #         LOG.info('Sending welcome email to %s', user['name'])
-        #         server = smtplib.SMTP(app_config['email']['server'])
-
-        #         server.ehlo()
-        #         server.starttls()
-        #         server.sendmail(
-        #             from_address, to_addresses, content.as_string()
-        #         )
-        #         server.quit()
-
-        #     # Update user profile to mark first_email_sent as true
-        #     user.first_email_sent = True
-        #     user.save()
-
-        # except Exception:
-        #     LOG.error(
-        #         'Unable to send welcome email to {}'.format(user.name),
-        #         exc_info=True
-        #     )
+    # Update user profile to mark first_email_sent as true
+    update_first_email_sent_flag(user['id'], app_config)
 
 def email_schedule(user, emails, app_config, schedule):
     """Emails user with any schedule changes"""
@@ -520,7 +474,8 @@ def notify_user(user, app_config, schedule):
     emails = retrieve_emails(user['id'], app_config)
 
     # If this is the first schedule, email the welcome details
-    email_welcome(user, emails, app_config)
+    if user['first_email_sent'] is False:
+        email_welcome(user, emails, app_config)
 
     # Email the user the calendar details
     email_schedule(user, emails, app_config, schedule)
