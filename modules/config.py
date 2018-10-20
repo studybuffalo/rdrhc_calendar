@@ -11,6 +11,9 @@ def assemble_app_configuration_details(config_path):
     config = configparser.ConfigParser()
     config.read(config_path)
 
+    if not config.sections():
+        raise FileNotFoundError('Config file not found or is empty.')
+
     return {
         'sentry_dsn': config.get('sentry', 'dsn'),
         'api_url': config.get('api', 'url'),
