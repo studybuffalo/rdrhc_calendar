@@ -157,7 +157,7 @@ class Schedule():
 
     def _retrieve_shift_codes(self):
         """Takes a specific user and retrieves their shift times."""
-        user_id = self.user['id']
+        user_id = self.user['sb_user']
 
         LOG.debug('Collecting shift codes for user id = %s', user_id)
 
@@ -516,7 +516,7 @@ class Schedule():
 def assemble_schedule(app_config, excel_files, user):
     """Assembles all the schedule details for provided user."""
 
-    old_schedule = retrieve_old_schedule(app_config, user['id'])
+    old_schedule = retrieve_old_schedule(app_config, user['sb_user'])
     new_schedule_raw = generate_raw_schedule(app_config, excel_files, user)
 
     new_schedule = Schedule(new_schedule_raw, old_schedule, user, app_config)

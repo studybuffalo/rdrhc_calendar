@@ -53,7 +53,7 @@ class MockSMTP():
 def test_retrieve_emails_404_response():
     """Tests handling of 404 response in retrieve_emails."""
     try:
-        notify.retrieve_emails(USER['id'], APP_CONFIG)
+        notify.retrieve_emails(USER['sb_user'], APP_CONFIG)
     except RequestsConnectionError:
         assert True
     else:
@@ -62,7 +62,7 @@ def test_retrieve_emails_404_response():
 @patch('requests.get', MockRetrieveEmailsResponse)
 def test_retrieve_emails():
     """Tests handling of empty schedule in retrieve_emails."""
-    emails = notify.retrieve_emails(USER['id'], APP_CONFIG)
+    emails = notify.retrieve_emails(USER['sb_user'], APP_CONFIG)
 
     assert len(emails) == 2
     assert emails[0] == 'test1@email.com'
