@@ -107,7 +107,7 @@ def generate_calendar_event(shift, user, dt_stamp, i):
     lines.append('SUMMARY:{} Shift'.format(shift['shift_code']))
     lines.append('TRANSP:TRANSPARENT')
 
-    if user['reminder'] >= 0:
+    if user['reminder'] is not None:
         lines.extend(generate_alarm(user['reminder'], shift['shift_code']))
 
     lines.append('END:VEVENT')
@@ -131,13 +131,13 @@ def fold_calendar_lines(lines):
             line = line[75:]
             length = len(line)
 
-            while length > 75:
-                # Add folded line
-                new_line = line[0:75]
+            # 74 characters because of required leading space
+            while length > 74:
+                new_line = line[0:74]
                 folded_lines.append(' ' + new_line + '\n')
 
                 # Generate new line and length
-                line = line[75:]
+                line = line[74:]
                 length = len(line)
 
             # Add remainder
