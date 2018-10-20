@@ -26,9 +26,7 @@ These codes are for you to review to ensure no work shifts have been missed; the
 
 The address for your schedule is: https://www.studybuffalo.com/calendar/{{ calendar_name }}.ics
 
-For help using the calendar file, please see the tutorials located at: https://www.studybuffalo.com/calendar/
-
-If you wish to have any modifications made to your shift codes (including exlcuded or missing shift codes), please contact the owner of this program.
+For help using the calendar file or customizing your calendar, visit https://www.studybuffalo.com/rdrhc-calendar/
 
 ------------------------------------
 
