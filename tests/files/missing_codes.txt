@@ -1,0 +1,7 @@
+Hello,
+
+This email is to notify you that the following shift codes were identified as not having a ShiftCode entry:
+
+{% block codes %}{{ codes }}{% block codes %}
+
+You may add these codes to the ShiftCode database at https://www.studybuffalo.com/rdrhc-calendar/missing-codes/.
