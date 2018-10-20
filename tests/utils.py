@@ -6,18 +6,20 @@ from decimal import Decimal
 
 class MockRequest404Response():
     """A mock of requests 404 response."""
-    def __init__(self, url, headers):
+    def __init__(self, url, headers, data=None):
         self.url = url
         self.headers = headers
         self.status_code = 404
+        self.data = data
+        self.text = 'Mock 404 error'
 
 class MockRequest200Response():
     """A mock of request 200 response with custom text."""
-    def __init__(self, url, headers):
+    def __init__(self, url, headers, data=None):
         self.url = url
         self.headers = headers
         self.status_code = 200
-
+        self.data = data
 
 APP_CONFIG = {
     'api_url': 'https://127.0.0.1/api/',
@@ -45,6 +47,7 @@ APP_CONFIG = {
 
 USER = {
     'id': 1,
+    'sb_user': 10,
     'name': 'Test User',
     'calendar_name': 'SecretCalendar',
 }
