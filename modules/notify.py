@@ -186,35 +186,11 @@ def email_schedule(user, emails, app_config, schedule):
         with open(text_loc, 'r') as text_file:
             text = text_file.read().replace('\n', '\r\n')
 
-        # try:
-        #     with open(text_loc, 'r') as textFile:
-        #         text = textFile.read().replace('\n', '\r\n')
-        # except Exception:
-        #     LOG.warn(
-        #         'Unable to read welcome email text template at {}'.format(
-        #             text_loc
-        #         ),
-        #         exc_info=True
-        #     )
-        #     text = None
-
         # Opens the update email (html) file
         html_loc = app_config['email']['update_html']
 
         with open(html_loc, 'r') as html_file:
             html = html_file.read()
-
-        # try:
-        #     with open(html_loc, 'r') as htmlFile:
-        #         html = htmlFile.read()
-        # except Exception:
-        #     LOG.warn(
-        #         'Unable to read welcome email html template at {}'.format(
-        #             html_loc
-        #         ),
-        #         exc_info=True
-        #     )
-        #     html = None
 
         # Set the user name
         text = text.replace('{{ user_name }}', user['name'])
@@ -298,21 +274,6 @@ def email_schedule(user, emails, app_config, schedule):
 
         if schedule.missing:
             # TODO: Update this to use durations
-
-            # weekday_end = weekday_start + timedelta(
-            #     hours=weekday_hours,
-            #     minutes=weekday_minutes
-            # )
-
-            # weekend_end = weekend_start + timedelta(
-            #     hours=weekend_hours,
-            #     minutes=weekend_minutes
-            # )
-
-            # stat_end = stat_start + timedelta(
-            #     hours=stat_hours,
-            #     minutes=stat_minutes
-            # )
 
             defaults = app_config['calendar_defaults']
 
@@ -466,18 +427,6 @@ def email_missing_codes(missing_codes, app_config):
 
     with open(text_loc, 'r') as text_file:
         text = text_file.read().replace('\n', '\r\n')
-
-    # try:
-    #     with open(text_loc, 'r') as textFile:
-    #         text = textFile.read().replace('\n', '\r\n')
-    # except Exception:
-    #     LOG.warn(
-    #         'Unable to read missing codes email text template at {}'.format(
-    #             text_loc
-    #         ),
-    #         exc_info=True
-    #     )
-    #     text = None
 
     # Opens the notification (text) template
     html_loc = app_config['email']['missing_codes_html']
