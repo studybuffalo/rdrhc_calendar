@@ -69,11 +69,11 @@ def update_missing_codes_database(app_config, missing_codes):
     """Uploads any new missing shift codes"""
     LOG.debug("Checking for missing shift codes")
 
-    api_url = '{}shifts/missing/upload/'.format(app_config['api_url'])
+    api_url = '{}shift-codes/missing/upload/'.format(app_config['api_url'])
 
     response = requests.post(
         api_url,
-        data=json.dumps(missing_codes),
+        data={'codes': json.dumps(missing_codes)},
         headers=app_config['api_headers'],
     )
 
