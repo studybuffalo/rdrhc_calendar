@@ -1,5 +1,6 @@
 """Functions used to send notifications to users and owners."""
 
+from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formataddr
@@ -9,6 +10,8 @@ import re
 import smtplib
 
 import requests
+
+from modules.utils import convert_duration_to_hours_minutes
 
 
 # Setup logger
@@ -141,8 +144,12 @@ def update_additions_section(text, html, additions):
         additions_html = []
 
         for addition in additions:
-            additions_text.append(' - {}'.format(addition.msg))
-            additions_html.append('<li>{}</li>'.format(addition.msg))
+            additions_text.append(
+                ' - {}'.format(addition['email_message'])
+            )
+            additions_html.append(
+                '<li>{}</li>'.format(addition['email_message'])
+            )
 
         text = text.replace('{{ additions }}', '\r\n'.join(additions_text))
         html = html.replace('{{ additions }}', '\r\n'.join(additions_html))
@@ -168,8 +175,12 @@ def update_deletions_section(text, html, deletions):
         deletions_html = []
 
         for deletion in deletions:
-            deletions_text.append(' - {}'.format(deletion.msg))
-            deletions_html.append('<li>{}</li>'.format(deletion.msg))
+            deletions_text.append(
+                ' - {}'.format(deletion['email_message'])
+            )
+            deletions_html.append(
+                '<li>{}</li>'.format(deletion['email_message'])
+            )
 
         text = text.replace('{{ deletions }}', '\r\n'.join(deletions_text))
         html = html.replace('{{ deletions }}', '\r\n'.join(deletions_html))
@@ -195,8 +206,12 @@ def update_changes_section(text, html, changes):
         changes_html = []
 
         for change in changes:
-            changes_text.append(' - {}'.format(change.msg))
-            changes_html.append('<li>{}</li>'.format(change.msg))
+            changes_text.append(
+                ' - {}'.format(change['email_message'])
+            )
+            changes_html.append(
+                '<li>{}</li>'.format(change['email_message'])
+            )
 
         text = text.replace('{{ changes }}', '\r\n'.join(changes_text))
         html = html.replace('{{ changes }}', '\r\n'.join(changes_html))
@@ -213,20 +228,31 @@ def update_changes_section(text, html, changes):
 
     return text, html
 
+def determine_end_time(start_time, duration):
+    """Calculates an endtime based on start time and duration."""
+    start_datetime = datetime(2000, 1, 1, start_time.hour, start_time.minute)
+    hours, minutes = convert_duration_to_hours_minutes(duration)
+
+    end_time = start_datetime + timedelta(
+        hours=hours, minutes=minutes
+    )
+
+    return end_time.strftime('%H:%M')
+
 def update_missing_section(text, html, missings, app_config):
     """Updates the email templates' missing section."""
     LOG.debug('Updating the "missing" section')
 
     if missings:
-        # TODO: Update this to use durations
-
         defaults = app_config['calendar_defaults']
 
         weekday_start = defaults['weekday_start'].strftime('%H:%M')
         text = text.replace('{{ weekday_start }}', weekday_start)
         html = html.replace('{{ weekday_start }}', weekday_start)
 
-        weekday_end = defaults['weekday_end'].strftime('%H:%M')
+        weekday_end = determine_end_time(
+            defaults['weekday_start'], defaults['weekday_duration']
+        )
         text = text.replace('{{ weekday_end }}', weekday_end)
         html = html.replace('{{ weekday_end }}', weekday_end)
 
@@ -234,7 +260,9 @@ def update_missing_section(text, html, missings, app_config):
         text = text.replace('{{ weekend_start }}', weekend_start)
         html = html.replace('{{ weekend_start }}', weekend_start)
 
-        weekend_end = defaults['weekend_end'].strftime('%H:%M')
+        weekend_end = determine_end_time(
+            defaults['weekend_start'], defaults['weekend_duration']
+        )
         text = text.replace('{{ weekend_end }}', weekend_end)
         html = html.replace('{{ weekend_end }}', weekend_end)
 
@@ -242,7 +270,9 @@ def update_missing_section(text, html, missings, app_config):
         text = text.replace('{{ stat_start }}', stat_start)
         html = html.replace('{{ stat_start }}', stat_start)
 
-        stat_end = defaults['stat_end'].strftime('%H:%M')
+        stat_end = determine_end_time(
+            defaults['stat_start'], defaults['stat_duration']
+        )
         text = text.replace('{{ stat_end }}', stat_end)
         html = html.replace('{{ stat_end }}', stat_end)
 
@@ -250,8 +280,12 @@ def update_missing_section(text, html, missings, app_config):
         missing_html = []
 
         for missing in missings:
-            missing_text.append(' - {}'.format(missing.msg))
-            missing_html.append('<li>{}</li>'.format(missing.msg))
+            missing_text.append(
+                ' - {}'.format(missing['email_message'])
+            )
+            missing_html.append(
+                '<li>{}</li>'.format(missing['email_message'])
+            )
 
         text = text.replace('{{ missing }}', '\r\n'.join(missing_text))
         html = html.replace('{{ missing }}', '\r\n'.join(missing_html))
@@ -295,7 +329,7 @@ def update_null_section(text, html, nulls):
 
     return text, html
 
-def email_schedule(user, emails, app_config, schedule):
+def email_schedule(user, emails, app_config, notification_details):
     """Emails user with any schedule changes"""
     LOG.debug('User qualifies for an update email to be sent')
 
@@ -319,19 +353,19 @@ def email_schedule(user, emails, app_config, schedule):
 
     # Update all the different notification sections
     text, html = update_additions_section(
-        text, html, schedule.notification_details['additions']
+        text, html, notification_details['additions']
     )
     text, html = update_deletions_section(
-        text, html, schedule.notification_details['deletions']
+        text, html, notification_details['deletions']
     )
     text, html = update_changes_section(
-        text, html, schedule.notification_details['changes']
+        text, html, notification_details['changes']
     )
     text, html = update_missing_section(
-        text, html, schedule.notification_details['missing'], app_config
+        text, html, notification_details['missing'], app_config
     )
     text, html = update_null_section(
-        text, html, schedule.notification_details['null']
+        text, html, notification_details['null']
     )
 
     # Add the calendar name
@@ -421,4 +455,4 @@ def notify_user(user, app_config, schedule):
     ]
 
     if any(email_notifications):
-        email_schedule(user, emails, app_config, schedule)
+        email_schedule(user, emails, app_config, schedule.notification_details)
