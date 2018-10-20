@@ -11,6 +11,7 @@ LOG = logging.getLogger(__name__)
 def generate_calendar(user, schedule, cal_loc):
     """Generates an .ics file from the extracted user schedule"""
     # TODO: Better handle general uncaught exceptions
+    # TODO: Combine shifts that have same start and end datetimes
 
     LOG.info('Generating .ics calendar for %s', user['name'])
 
