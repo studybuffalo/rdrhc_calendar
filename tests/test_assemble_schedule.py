@@ -37,14 +37,19 @@ OLD_SCHEDULE = {
     ],
     '2018-03-01': [
         {"shift_code": "C1", "start_date": "2018-03-01"},
+        {"shift_code": "vr", "start_date": "2018-03-01"},
     ],
     '2018-04-01': [
         {"shift_code": "C1", "start_date": "2018-04-01"},
-        {"shift_code": "F", "start_date": "2018-04-01"},
+        {"shift_code": "D1", "start_date": "2018-04-01"},
     ],
     '2018-05-01': [
-        {"shift_code": "C1", "start_date": "2018-12-01"},
-    ]
+        {"shift_code": "C1", "start_date": "2018-05-01"},
+        {"shift_code": "C2", "start_date": "2018-04-01"},
+    ],
+    '2018-06-01': [
+        {"shift_code": "C1", "start_date": "2018-06-01"},
+    ],
 }
 
 EXTRACTED_SCHEDULE = [
@@ -54,8 +59,48 @@ EXTRACTED_SCHEDULE = [
         'comment': 'SUPER STAT',
     },
     {
+        'shift_code': 'C1F',
+        'start_date': datetime(2018, 2, 1),
+        'comment': '',
+    },
+    {
         'shift_code': 'C1',
-        'start_date': datetime(2018, 12, 1),
+        'start_date': datetime(2018, 3, 1),
+        'comment': '',
+    },
+    {
+        'shift_code': 'vr',
+        'start_date': datetime(2018, 3, 1),
+        'comment': '',
+    },
+    {
+        'shift_code': 'D1',
+        'start_date': datetime(2018, 4, 1),
+        'comment': '',
+    },
+    {
+        'shift_code': 'C1',
+        'start_date': datetime(2018, 5, 1),
+        'comment': '',
+    },
+    {
+        'shift_code': 'C2',
+        'start_date': datetime(2018, 5, 1),
+        'comment': '',
+    },
+    {
+        'shift_code': 'A1',
+        'start_date': datetime(2018, 7, 1),
+        'comment': '',
+    },
+    {
+        'shift_code': 'C1',
+        'start_date': datetime(2018, 8, 1),
+        'comment': '',
+    },
+    {
+        'shift_code': 'WR',
+        'start_date': datetime(2018, 8, 1),
         'comment': '',
     },
 ]
@@ -80,7 +125,14 @@ NEW_SCHEDULE = [
         'start_datetime': datetime(2018, 3, 1, 3, 0),
         'end_datetime': datetime(2018, 3, 1, 4, 0),
         'comment': '',
-        'shift_code_fk': None,
+        'shift_code_fk': 1,
+    },
+    {
+        'shift_code': 'vr',
+        'start_datetime': datetime(2018, 3, 1, 3, 0),
+        'end_datetime': datetime(2018, 3, 1, 4, 0),
+        'comment': '',
+        'shift_code_fk': 2,
     },
     {
         'shift_code': 'D1',
@@ -98,10 +150,24 @@ NEW_SCHEDULE = [
     },
     {
         'shift_code': 'C2',
-        'start_datetime': datetime(2018, 5, 1, 7, 0),
+        'start_datetime': datetime(2018, 5, 1, 5, 0),
         'end_datetime': datetime(2018, 5, 1, 6, 0),
         'comment': '',
         'shift_code_fk': None,
+    },
+    {
+        'shift_code': 'A1',
+        'start_datetime': datetime(2018, 7, 1, 7, 0),
+        'end_datetime': datetime(2018, 7, 1, 8, 0),
+        'comment': '',
+        'shift_code_fk': None,
+    },
+    {
+        'shift_code': 'C1',
+        'start_datetime': datetime(2018, 8, 1, 8, 0),
+        'end_datetime': datetime(2018, 8, 1, 9, 0),
+        'comment': '',
+        'shift_code_fk': 1,
     },
 ]
 
@@ -119,6 +185,17 @@ USER_SHIFT_CODES = [
     },
     {
         'id': 2, 'code': 'VR', 'sb_user': 1, 'role': 'p',
+        'stat_start': None, 'stat_duration': None,
+        'monday_start': None, 'monday_duration': None,
+        'tuesday_start': None, 'tuesday_duration':None,
+        'wednesday_start': None, 'wednesday_duration': None,
+        'thursday_start': None, 'thursday_duration': None,
+        'friday_start': None, 'friday_duration': None,
+        'saturday_start': None, 'saturday_duration': None,
+        'sunday_start': None, 'sunday_duration': None,
+    },
+    {
+        'id': 3, 'code': 'WR', 'sb_user': None, 'role': 'p',
         'stat_start': None, 'stat_duration': None,
         'monday_start': None, 'monday_duration': None,
         'tuesday_start': None, 'tuesday_duration':None,
@@ -416,7 +493,7 @@ def test_group_schedule_by_date():
     schedule.shifts = NEW_SCHEDULE
     schedule._group_schedule_by_date()
 
-    assert len(schedule.schedule_new_by_date) == 5
+    assert len(schedule.schedule_new_by_date) == 7
     assert len(schedule.schedule_new_by_date['2018-01-01']) == 1
     assert len(schedule.schedule_new_by_date['2018-05-01']) == 2
     assert schedule.schedule_new_by_date['2018-05-01'][1]['shift_code'] == 'C2'
@@ -430,8 +507,8 @@ def test_group_schedule_by_date_x_handling():
     updated_new_schedule = NEW_SCHEDULE
     updated_new_schedule.append({
         'shift_code': 'X',
-        'start_datetime': datetime(2018, 3, 1, 3, 0),
-        'end_datetime': datetime(2018, 3, 1, 4, 0),
+        'start_datetime': datetime(2018, 1, 1, 1, 0),
+        'end_datetime': datetime(2018, 1, 1, 2, 0),
         'comment': '',
         'shift_code_fk': None,
     })
@@ -439,8 +516,8 @@ def test_group_schedule_by_date_x_handling():
 
     schedule._group_schedule_by_date()
 
-    assert len(schedule.schedule_new_by_date) == 5
-    assert len(schedule.schedule_new_by_date['2018-03-01']) == 1
+    assert len(schedule.schedule_new_by_date) == 7
+    assert len(schedule.schedule_new_by_date['2018-01-01']) == 1
 
 def test_determine_shift_details_defined_shift():
     """Tests assigning details to a defined shift."""
@@ -498,7 +575,7 @@ def test_determine_shift_details_null_shift():
     assert not schedule.shifts
     assert len(null_details) == 1
     assert null_details[0]['date'] == date(2018, 1, 2)
-    assert null_details[0]['msg'] == '2018-01-02 - vr'
+    assert null_details[0]['email_message'] == '2018-01-02 - vr'
 
 def test_determine_shift_details_missing_shift():
     """Tests handling of missing shift."""
@@ -526,5 +603,122 @@ def test_determine_shift_details_missing_shift():
     assert schedule.shifts[0]['shift_code_fk'] is None
 
     assert missing[0]['date'] == date(2018, 1, 2)
-    assert missing[0]['msg'] == '2018-01-02 - E1'
+    assert missing[0]['email_message'] == '2018-01-02 - E1'
     assert 'E1' in missing_upload
+
+def test_determine_schedule_additions():
+    """Tests identification of shift additions."""
+    schedule = assemble_schedule.Schedule(
+        OLD_SCHEDULE, EXTRACTED_SCHEDULE, USER, APP_CONFIG
+    )
+    schedule.shifts = NEW_SCHEDULE
+    schedule._group_schedule_by_date()
+    schedule.determine_schedule_additions()
+
+    additions = schedule.notification_details['additions']
+    assert len(additions) == 2
+    assert additions[0]['date'] == '2018-07-01'
+    assert additions[0]['email_message'] == '2018-07-01 - A1'
+    assert additions[1]['date'] == '2018-08-01'
+    assert additions[1]['email_message'] == '2018-08-01 - C1'
+
+# TODO: Add test for an X shift addition
+
+def test_determine_schedule_deletions():
+    """Tests identification of shift deletions."""
+    schedule = assemble_schedule.Schedule(
+        OLD_SCHEDULE, EXTRACTED_SCHEDULE, USER, APP_CONFIG
+    )
+    schedule.shifts = NEW_SCHEDULE
+    schedule._group_schedule_by_date()
+    schedule.determine_schedule_deletions()
+
+    deletions = schedule.notification_details['deletions']
+    assert len(deletions) == 1
+    assert deletions[0]['date'] == '2018-06-01'
+    assert deletions[0]['email_message'] == '2018-06-01 - C1'
+
+# TODO: Add test for an X shift deletion
+
+def test_determine_schedule_changes():
+    """Tests identification of shift changes."""
+    schedule = assemble_schedule.Schedule(
+        OLD_SCHEDULE, EXTRACTED_SCHEDULE, USER, APP_CONFIG
+    )
+    schedule.shifts = NEW_SCHEDULE
+    schedule._group_schedule_by_date()
+    schedule.determine_schedule_changes()
+
+    changes = schedule.notification_details['changes']
+
+    assert len(changes) == 2
+    assert changes[0]['date'] == '2018-02-01'
+    assert changes[0]['email_message'] == '2018-02-01 - C1 changed to C1F'
+    assert changes[1]['date'] == '2018-04-01'
+    assert changes[1]['email_message'] == '2018-04-01 - C1/D1 changed to D1'
+
+# TODO: Add test for X shift change (addition and deletion)
+
+def test_clean_missing_removes_shifts_properly():
+    """Tests that old missing shifts are removed from list."""
+    schedule = assemble_schedule.Schedule(
+        OLD_SCHEDULE, EXTRACTED_SCHEDULE, USER, APP_CONFIG
+    )
+
+    # Mimic initial shift detail generation
+    for shift in schedule.schedule_new:
+        schedule._determine_shift_details(
+            shift, USER_SHIFT_CODES, STAT_HOLIDAYS
+        )
+
+    # Initial test of original number of missing entries
+    assert len(schedule.notification_details['missing']) == 4
+    assert schedule.notification_details['missing'][0]['shift_code'] == 'C1F'
+    assert schedule.notification_details['missing'][1]['shift_code'] == 'D1'
+    assert schedule.notification_details['missing'][2]['shift_code'] == 'C2'
+    assert schedule.notification_details['missing'][3]['shift_code'] == 'A1'
+
+    schedule._group_schedule_by_date()
+    schedule.determine_schedule_additions()
+    schedule.determine_schedule_changes()
+    schedule.clean_missing()
+
+    missing = schedule.notification_details['missing']
+
+    assert len(missing) == 3
+    assert missing[0]['shift_code'] == 'C1F'
+    assert missing[1]['shift_code'] == 'D1'
+    assert missing[2]['shift_code'] == 'A1'
+
+def test_clean_null_removing_shifts_properly():
+    """Tests that old null shifts are removed from list."""
+    schedule = assemble_schedule.Schedule(
+        OLD_SCHEDULE, EXTRACTED_SCHEDULE, USER, APP_CONFIG
+    )
+
+    # Mimic initial shift detail generation
+    for shift in schedule.schedule_new:
+        schedule._determine_shift_details(
+            shift, USER_SHIFT_CODES, STAT_HOLIDAYS
+        )
+
+    # Initial test of original number of null entries
+    assert len(schedule.notification_details['null']) == 2
+    assert schedule.notification_details['null'][0]['shift_code'] == 'vr'
+    assert schedule.notification_details['null'][1]['shift_code'] == 'WR'
+
+    schedule._group_schedule_by_date()
+    schedule.determine_schedule_additions()
+    schedule.determine_schedule_changes()
+
+    # Manually add the WR shift to changes/additions (this normally wouldn't
+    # happen as all null shifts are removed during initial processing).
+    schedule.notification_details['changes'][1]['shift_codes'].append('WR')
+    schedule.notification_details['additions'][1]['shift_codes'].append('WR')
+
+    schedule.clean_null()
+
+    null = schedule.notification_details['null']
+
+    assert len(null) == 1
+    assert null[0]['shift_code'] == 'WR'
