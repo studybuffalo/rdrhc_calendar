@@ -92,7 +92,7 @@ def send_multipart_email(app_config, to_addresses, subject, body):
     content.attach(body['plain'])
     content.attach(body['html'])
 
-    # Attempt to send email
+    # Send the email
     if app_config['debug']['email_console']:
         LOG.debug(content.as_string())
     else:
