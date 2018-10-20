@@ -145,7 +145,7 @@ def extract_raw_schedule(
     # Note: should occur automatically, but just in case
     LOG.debug('Sorting shifts by date')
 
-    sorted_shifts = sorted(shifts, key=lambda s: s.start_date)
+    sorted_shifts = sorted(shifts, key=lambda s: s['start_date'])
 
     return sorted_shifts
 
