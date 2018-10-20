@@ -87,4 +87,4 @@ def update_missing_codes_database(app_config, missing_codes):
 
     new_codes = json.loads(response.text)
 
-    return new_codes
+    return new_codes['codes']
