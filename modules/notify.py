@@ -439,7 +439,7 @@ def email_missing_codes(missing_codes, app_config):
 def notify_user(user, app_config, schedule):
     """Determines which emails to send to specified user."""
     # Get the users email(s)
-    emails = retrieve_emails(user['id'], app_config)
+    emails = retrieve_emails(user['sb_user'], app_config)
 
     # If this is the first schedule, email the welcome details
     if user['first_email_sent'] is False:
