@@ -97,7 +97,7 @@ def send_multipart_email(app_config, to_addresses, subject, body):
 
     # Send the email
     if app_config['debug']['email_console']:
-        LOG.debug(content.as_string())
+        LOG.info(content.as_string())
     else:
         server = smtplib.SMTP(app_config['email']['server'])
 
