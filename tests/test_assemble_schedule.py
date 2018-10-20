@@ -284,7 +284,7 @@ def test_retrieve_stat_holidays_with_no_shifts():
     )
     stat_holidays = schedule._retrieve_stat_holidays()
 
-    assert len(stat_holidays) == 10
+    assert stat_holidays is None
 
 def test_group_schedule_by_date():
     """Tests that the extracted schedule is properly grouped by date."""

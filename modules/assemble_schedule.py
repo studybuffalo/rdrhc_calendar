@@ -214,39 +214,37 @@ class Schedule():
         """Retrieves any stat holidays occuring between schedule dates."""
         LOG.debug('Retrieving stat holiday information.')
 
-        try:
+        if self.schedule_new:
             first_day = str(self.schedule_new[0]['start_date'])
             last_day = str(self.schedule_new[-1]['start_date'])
-        except IndexError:
-            # Known error when a user has no shifts
-            first_day = datetime(2001, 1, 1)
-            last_day = datetime(2025, 12, 31)
 
-        api_url = '{}stat-holidays/?date_start={}&date_end={}'.format(
-            self.config['api_url'], first_day, last_day
-        )
-
-        stat_holidays_response = requests.get(
-            api_url,
-            headers=self.config['api_headers']
-        )
-
-        if stat_holidays_response.status_code >= 400:
-            raise ScheduleError(
-                (
-                    'Unable to connect to API ({}) and retrieve '
-                    'stat holidays.'
-                ).format(api_url)
+            api_url = '{}stat-holidays/?date_start={}&date_end={}'.format(
+                self.config['api_url'], first_day, last_day
             )
 
-        stat_holidays = []
-
-        for holiday_date in json.loads(stat_holidays_response.text):
-            stat_holidays.append(
-                datetime.strptime(holiday_date, '%Y-%m-%d')
+            stat_holidays_response = requests.get(
+                api_url,
+                headers=self.config['api_headers']
             )
 
-        return stat_holidays
+            if stat_holidays_response.status_code >= 400:
+                raise ScheduleError(
+                    (
+                        'Unable to connect to API ({}) and retrieve '
+                        'stat holidays.'
+                    ).format(api_url)
+                )
+
+            stat_holidays = []
+
+            for holiday_date in json.loads(stat_holidays_response.text):
+                stat_holidays.append(
+                    datetime.strptime(holiday_date, '%Y-%m-%d')
+                )
+
+            return stat_holidays
+
+        return None
 
     def _determine_shift_details(self, shift, shift_code_list, stat_holidays):
         is_null = True
@@ -519,7 +517,7 @@ def assemble_schedule(app_config, excel_files, user):
     old_schedule = retrieve_old_schedule(app_config, user['sb_user'])
     new_schedule_raw = generate_raw_schedule(app_config, excel_files, user)
 
-    new_schedule = Schedule(new_schedule_raw, old_schedule, user, app_config)
+    new_schedule = Schedule(old_schedule, new_schedule_raw, user, app_config)
     new_schedule.process_new_schedule()
 
     return new_schedule
