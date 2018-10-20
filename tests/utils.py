@@ -29,6 +29,15 @@ APP_CONFIG = {
         'weekend_duration': Decimal(5.5),
         'stat_start': time(9, 0, 0),
         'stat_duration': Decimal(9.9),
+    },
+    'email': {
+        'server': 'https://127.0.0.1/',
+        'from_name': 'App Owner',
+        'from_email': 'app@email.com',
+        'unsubscribe_link': 'https://127.0.0.1/unsubscribe/',
+    },
+    'debug': {
+        'email_console': True,
     }
 }
 
