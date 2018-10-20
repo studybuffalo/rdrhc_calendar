@@ -13,15 +13,14 @@ Initial Setup (Development)
 
   pipenv install --dev
 
-2. Create the required config file (should be located in a parent folder
-named "config") - TODO: add demo config file.
+2. Create the required config file - TODO: add demo config file.
 
 Running Program
 ===============
 
 .. code:: shell
 
-  pipenv run python run.py path_to_application
+  pipenv run python run.py path_to_config_file
 
 Testing
 =======
