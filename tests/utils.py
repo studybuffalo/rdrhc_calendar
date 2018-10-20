@@ -24,25 +24,29 @@ APP_CONFIG = {
     'api_headers': {'user-agent': 'rdrhc-calendar',},
     'calendar_defaults': {
         'weekday_start': time(1, 0, 0),
-        'weekday_duration': Decimal(1.1),
+        'weekday_duration': Decimal('1.1'),
         'weekend_start': time(5, 0, 0),
-        'weekend_duration': Decimal(5.5),
+        'weekend_duration': Decimal('5.5'),
         'stat_start': time(9, 0, 0),
-        'stat_duration': Decimal(9.9),
+        'stat_duration': Decimal('9.9'),
     },
     'email': {
         'server': 'https://127.0.0.1/',
         'from_name': 'App Owner',
         'from_email': 'app@email.com',
         'unsubscribe_link': 'https://127.0.0.1/unsubscribe/',
+        'owner_name': 'App Owner',
+        'owner_email': 'owner@email.com',
     },
     'debug': {
         'email_console': True,
-    }
+    },
 }
 
 USER = {
     'id': 1,
+    'name': 'Test User',
+    'calendar_name': 'SecretCalendar',
 }
 
 # Mock old and new schedules with additions, changes, deletions,

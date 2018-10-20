@@ -311,8 +311,8 @@ def update_null_section(text, html, nulls):
         null_html = []
 
         for null in nulls:
-            null_text.append(' - {}'.format(null.msg))
-            null_html.append('<li>{}</li>'.format(null.msg))
+            null_text.append(' - {}'.format(null['email_message']))
+            null_html.append('<li>{}</li>'.format(null['email_message']))
 
         text = text.replace('{{ excluded }}', '\r\n'.join(null_text))
         html = html.replace('{{ excluded }}', '\r\n'.join(null_html))
