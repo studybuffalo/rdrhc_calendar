@@ -85,7 +85,7 @@ def run_program(app_config):
 
             # Add the missing codes to the set
             missing_codes[user['role']] = missing_codes[user['role']].union(
-                schedule.missing_upload
+                schedule.notification_details['missing_upload']
             )
 
     # Upload the missing codes to the database

@@ -248,37 +248,6 @@ class Schedule():
 
         return stat_holidays
 
-    def _group_schedule_by_date(self):
-        """Groups schedule shifts by date"""
-        groupings = {}
-
-        for shift in self.shifts:
-            key_match = False
-            shift_date = shift['start_datetime'].strftime('%Y-%m-%d')
-
-            for key in groupings:
-                if shift_date == key:
-                    key_match = True
-
-                    # Do not add 'X' shifts
-                    if shift['shift_code'].upper() != 'X':
-                        # Append this shift to this key
-                        groupings[shift_date].append({
-                            'shift_code': shift['shift_code'],
-                            'start_date': shift_date
-                        })
-
-            if key_match is False:
-                # Do not add 'X' shifts
-                if shift['shift_code'].upper() != 'X':
-                    # Append a new key to the groupings
-                    groupings[shift_date] = [{
-                        'shift_code': shift['shift_code'],
-                        'start_date': shift_date
-                    }]
-
-        self.schedule_new_by_date = groupings
-
     def _determine_shift_details(self, shift, shift_code_list, stat_holidays):
         is_null = True
         is_missing = True
@@ -320,10 +289,11 @@ class Schedule():
             # Record the details for this missing code
             self.notification_details['missing'].append({
                 'date': shift['start_date'],
-                'msg': '{} - {}'.format(
+                'email_message': '{} - {}'.format(
                     shift['start_date'].strftime('%Y-%m-%d'),
                     shift['shift_code']
-                )
+                ),
+                'shift_code': shift['shift_code'],
             })
 
             self.notification_details['missing_upload'].add(
@@ -343,35 +313,75 @@ class Schedule():
             # Record the details for this null code
             self.notification_details['null'].append({
                 'date': shift['start_date'],
-                'msg': '{} - {}'.format(
+                'email_message': '{} - {}'.format(
                     shift['start_date'].strftime('%Y-%m-%d'),
                     shift['shift_code']
-                )
+                ),
+                'shift_code': shift['shift_code'],
             })
+
+    def _group_schedule_by_date(self):
+        """Groups schedule shifts by date"""
+        groupings = {}
+
+        for shift in self.shifts:
+            key_match = False
+            shift_date = shift['start_datetime'].strftime('%Y-%m-%d')
+
+            for key in groupings:
+                if shift_date == key:
+                    key_match = True
+
+                    # TODO: Figure out why I ignore X shifts
+                    # Do not add 'X' shifts
+                    if shift['shift_code'].upper() != 'X':
+                        # Append this shift to this key
+                        groupings[shift_date].append({
+                            'shift_code': shift['shift_code'],
+                            'start_date': shift_date
+                        })
+
+            if key_match is False:
+                # Do not add 'X' shifts
+                if shift['shift_code'].upper() != 'X':
+                    # Append a new key to the groupings
+                    groupings[shift_date] = [{
+                        'shift_code': shift['shift_code'],
+                        'start_date': shift_date
+                    }]
+
+        self.schedule_new_by_date = groupings
 
     def determine_schedule_additions(self):
         """Determines which shifts are additions."""
         for new_date, new_shifts in self.schedule_new_by_date.items():
             if new_date not in self.schedule_old:
-                new_codes = '/'.join(str(s['shift_code']) for s in new_shifts)
-                msg = '{} - {}'.format(
-                    new_date.strftime('%Y-%m-%d'), new_codes
-                )
+                # Get list of all shift codes used
+                new_codes = []
 
-                self.notification_details['additions'].append(
-                    {'date': new_date, 'msg': msg}
-                )
+                for shift in new_shifts:
+                    new_codes.append(shift['shift_code'])
+
+                new_codes_string = '/'.join(new_codes)
+                message = '{} - {}'.format(new_date, new_codes_string)
+
+                self.notification_details['additions'].append({
+                    'date': new_date,
+                    'email_message': message,
+                    'shift_codes': new_codes,
+                })
 
     def determine_schedule_deletions(self):
         """Determines which shifts are deletions."""
         for old_date, old_shifts in self.schedule_old.items():
             if old_date not in self.schedule_new_by_date:
                 old_codes = '/'.join(str(s['shift_code']) for s in old_shifts)
-                msg = '{} - {}'.format(old_date, old_codes)
+                message = '{} - {}'.format(old_date, old_codes)
 
-                self.notification_details['deletions'].append(
-                    {'date': old_date, 'msg': msg}
-                )
+                self.notification_details['deletions'].append({
+                    'date': old_date,
+                    'email_message': message
+                })
 
     def determine_schedule_changes(self):
         """Determines which shifts are changes."""
@@ -391,19 +401,27 @@ class Schedule():
                 # If the number of Trues equal length of old_shifts,
                 # no changes occurred
                 if len(shift_match) != len(old_shifts):
-                    old_codes = '/'.join(
+                    # Get list of all shift codes used
+                    new_codes = []
+
+                    for shift in new_shifts:
+                        new_codes.append(shift['shift_code'])
+
+                    new_codes_string = '/'.join(new_codes)
+
+                    old_codes_string = '/'.join(
                         str(s['shift_code']) for s in old_shifts
                     )
-                    new_codes = '/'.join(
-                        str(s['shift_code']) for s in new_shifts
-                    )
-                    msg = '{} - {} changed to {}'.format(
-                        old_date, old_codes, new_codes
+
+                    message = '{} - {} changed to {}'.format(
+                        old_date, old_codes_string, new_codes_string
                     )
 
-                    self.notification_details['changes'].append(
-                        {'date': old_date, 'msg': msg}
-                    )
+                    self.notification_details['changes'].append({
+                        'date': old_date,
+                        'email_message': message,
+                        'shift_codes': new_codes,
+                    })
 
     def clean_missing(self):
         """Remove missing shifts not in additions or changes list.
@@ -413,13 +431,20 @@ class Schedule():
         updated_missing = []
 
         for missing_shift in self.notification_details['missing']:
+            is_new = False
+
             for change in self.notification_details['changes']:
-                if missing_shift['date'] == change['date']:
-                    updated_missing.append(missing_shift)
+                if missing_shift['shift_code'] in change['shift_codes']:
+                    is_new = True
+                    break
 
             for addition in self.notification_details['additions']:
-                if missing_shift['date'] == addition['date']:
-                    updated_missing.append(missing_shift)
+                if missing_shift['shift_code'] in addition['shift_codes']:
+                    is_new = True
+                    break
+
+            if is_new:
+                updated_missing.append(missing_shift)
 
         self.notification_details['missing'] = updated_missing
 
@@ -430,16 +455,21 @@ class Schedule():
         """
         updated_null = []
 
-        # Removes null shifts not in the additions or changes lists
-        # (user will have already been notified on these shifts)
         for null_shift in self.notification_details['null']:
+            is_new = False
+
             for change in self.notification_details['changes']:
-                if null_shift['date'] == change['date']:
-                    updated_null.append(null_shift)
+                if null_shift['shift_code'] in change['shift_codes']:
+                    is_new = True
+                    break
 
             for addition in self.notification_details['additions']:
-                if null_shift['date'] == addition['date']:
-                    updated_null.append(null_shift)
+                if null_shift['shift_code'] in addition['shift_codes']:
+                    is_new = True
+                    break
+
+            if is_new:
+                updated_null.append(null_shift)
 
         self.notification_details['null'] = updated_null
 
