@@ -71,20 +71,29 @@ def update_missing_codes_database(app_config, missing_codes):
 
     api_url = '{}shift-codes/missing/upload/'.format(app_config['api_url'])
 
-    response = requests.post(
-        api_url,
-        data={'codes': json.dumps(missing_codes)},
-        headers=app_config['api_headers'],
-    )
+    post_data = []
 
-    if response.status_code >= 400:
-        raise requests.ConnectionError(
-            (
-                'Unable to connect to API ({}) and upload '
-                'missing codes: {}'
-            ).format(api_url, response.text)
+    for role, codes in missing_codes.items():
+        for code in codes:
+            post_data.append({'code': code, 'role': role})
+
+    if post_data:
+        response = requests.post(
+            api_url,
+            data={'codes': json.dumps(post_data)},
+            headers=app_config['api_headers'],
         )
 
-    new_codes = json.loads(response.text)
+        if response.status_code >= 400:
+            raise requests.ConnectionError(
+                (
+                    'Unable to connect to API ({}) and upload '
+                    'missing codes: {}'
+                ).format(api_url, response.text)
+            )
 
-    return new_codes
+        new_codes = json.loads(response.text)
+
+        return new_codes
+
+    return None

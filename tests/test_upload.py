@@ -94,11 +94,11 @@ def test_update_schedule_database_200_responses():
 @patch('requests.post', MockRequest404Response)
 def test_update_missing_codes_database_404_response():
     """Tests update_missing_codes_database 404 response handling."""
-    missing_codes = [
-        {'code': 'A1', 'role': 'p'},
-        {'code': 'B1', 'role': 't'},
-        {'code': 'C1', 'role': 'a'},
-    ]
+    missing_codes = {
+        'a': set(['A1', 'A2']),
+        'p': set(['P1', 'P2']),
+        't': set(['T1', 'T2']),
+    }
     try:
         upload.update_missing_codes_database(APP_CONFIG, missing_codes)
     except RequestsConnectionError:
@@ -109,14 +109,26 @@ def test_update_missing_codes_database_404_response():
 @patch('requests.post', MockUpdateMissingCodes200Response)
 def test_update_missing_codes_database_200_response():
     """Tests update_missing_codes_database 200 response handling."""
-    missing_codes = [
-        {'code': 'A1', 'role': 'p'},
-        {'code': 'B1', 'role': 't'},
-        {'code': 'C1', 'role': 'a'},
-    ]
+    missing_codes = {
+        'a': set(['A1', 'A2']),
+        'p': set(['P1', 'P2']),
+        't': set(['T1', 'T2']),
+    }
     response = upload.update_missing_codes_database(APP_CONFIG, missing_codes)
 
     assert len(response) == 3
     assert response[0] == 'A1'
     assert response[1] == 'B1'
     assert response[2] == 'C1'
+
+@patch('requests.post', MockUpdateMissingCodes200Response)
+def test_update_missing_codes_database_no_codes():
+    """Tests update_missing_codes_database 200 response handling."""
+    missing_codes = {
+        'a': set(),
+        'p': set(),
+        't': set(),
+    }
+    response = upload.update_missing_codes_database(APP_CONFIG, missing_codes)
+
+    assert response is None

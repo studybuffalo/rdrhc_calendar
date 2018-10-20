@@ -89,7 +89,9 @@ def run_program(app_config):
             )
 
     # Upload the missing codes to the database
-    missing_codes_upload = upload.update_missing_codes_database(missing_codes)
+    missing_codes_upload = upload.update_missing_codes_database(
+        app_config, missing_codes
+    )
 
     # Notify owner that there are new codes to upload
     if missing_codes_upload:
