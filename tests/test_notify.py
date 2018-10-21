@@ -20,8 +20,8 @@ class MockRetrieveEmailsResponse(MockRequest200Response):
     def __init__(self, url, headers):
         super().__init__(url, headers)
         self.text = """[
-            {"email": "test1@email.com"},
-            {"email": "test2@email.com"}
+            "test1@email.com",
+            "test2@email.com"
         ]"""
 
 class MockSMTP():
