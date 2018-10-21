@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from requests import ConnectionError as RequestsConnectionError
 
-from modules import upload
+from modules import upload, custom_exceptions
 
 from tests.utils import (
     MockRequest404Response, MockRequest200Response, APP_CONFIG, NEW_SCHEDULE,
@@ -43,7 +43,7 @@ def test_upload_user_schedule_404_response():
     """Tests handling of 404 response for upload_user_schedule."""
     try:
         upload.upload_user_schedule(APP_CONFIG, 1, NEW_SCHEDULE)
-    except RequestsConnectionError:
+    except custom_exceptions.UploadError:
         assert True
     else:
         assert False
@@ -53,7 +53,7 @@ def test_upload_user_schedule_200_response():
     """Tests handling of 404 response for upload_user_schedule."""
     try:
         upload.upload_user_schedule(APP_CONFIG, 1, NEW_SCHEDULE)
-    except RequestsConnectionError:
+    except custom_exceptions.UploadError:
         assert False
     else:
         assert True
@@ -75,7 +75,7 @@ def test_update_schedule_database_upload_404_responses():
     """Tests handling of 404 response for update_schedule_database."""
     try:
         upload.update_schedule_database(USER, NEW_SCHEDULE, APP_CONFIG)
-    except RequestsConnectionError:
+    except custom_exceptions.UploadError:
         assert True
     else:
         assert False
@@ -87,6 +87,8 @@ def test_update_schedule_database_200_responses():
     try:
         upload.update_schedule_database(USER, NEW_SCHEDULE, APP_CONFIG)
     except RequestsConnectionError:
+        assert False
+    except custom_exceptions.UploadError:
         assert False
     else:
         assert True
@@ -101,7 +103,7 @@ def test_update_missing_codes_database_404_response():
     }
     try:
         upload.update_missing_codes_database(APP_CONFIG, missing_codes)
-    except RequestsConnectionError:
+    except custom_exceptions.UploadError:
         assert True
     else:
         assert False
