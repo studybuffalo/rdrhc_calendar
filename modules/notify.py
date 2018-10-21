@@ -36,10 +36,7 @@ def retrieve_emails(user_id, app_config):
             ).format(api_url)
         )
 
-    emails = []
-
-    for email in json.loads(emails_response.text):
-        emails.append(email['email'])
+    emails = json.loads(emails_response.text)
 
     return emails
 
