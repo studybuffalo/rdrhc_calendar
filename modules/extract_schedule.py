@@ -39,7 +39,7 @@ def return_column_index(sheet, user, name_row, col_start, col_end):
         return index
 
     # No index found - raise error
-    raise ScheduleError('Unable to find index for {} (role = {}'.format(
+    raise ScheduleError('Unable to find index for {} (role = {})'.format(
         user['name'], role
     ))
 
