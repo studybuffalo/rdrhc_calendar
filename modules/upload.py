@@ -5,6 +5,7 @@ import logging
 
 import requests
 
+from modules.custom_exceptions import UploadError
 
 # Setup logger
 LOG = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ def upload_user_schedule(app_config, user_id, schedule):
     )
 
     if response.status_code >= 400:
-        raise requests.ConnectionError(
+        raise UploadError(
             (
                 'Unable to connect to API ({}) and upload '
                 'user schedule: {}'
@@ -85,7 +86,7 @@ def update_missing_codes_database(app_config, missing_codes):
         )
 
         if response.status_code >= 400:
-            raise requests.ConnectionError(
+            raise UploadError(
                 (
                     'Unable to connect to API ({}) and upload '
                     'missing codes: {}'

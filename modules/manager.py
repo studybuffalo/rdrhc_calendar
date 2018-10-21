@@ -9,7 +9,7 @@ import requests
 from modules import notify, upload
 from modules.assemble_schedule import assemble_schedule
 from modules.calendar import generate_calendar
-from modules.custom_exceptions import ScheduleError
+from modules.custom_exceptions import ScheduleError, UploadError
 from modules.retrieve import retrieve_schedule_file_paths
 
 
@@ -72,8 +72,16 @@ def run_program(app_config):
             schedule = None
 
         if schedule:
-            # Upload the schedule data to the server
-            upload.update_schedule_database(user, schedule.shifts, app_config)
+            try:
+                upload.update_schedule_database(
+                    user, schedule.shifts, app_config
+                )
+            except UploadError:
+                LOG.exception(
+                    'Unable to upload to API for %s (role = %s)',
+                    user['schedule_name'],
+                    user['role']
+                )
 
             # Generate and the iCal file to the Django server
             generate_calendar(
