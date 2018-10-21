@@ -201,12 +201,14 @@ class Schedule():
             ]
 
             for key in date_keys:
-                shift_codes[index][key] = datetime.strptime(
-                    code[key], '%H:%M:%S'
-                ).time()
+                if code[key]:
+                    shift_codes[index][key] = datetime.strptime(
+                        code[key], '%H:%M:%S'
+                    ).time()
 
             for key in decimal_keys:
-                shift_codes[index][key] = Decimal(code[key])
+                if code[key]:
+                    shift_codes[index][key] = Decimal(code[key])
 
         return shift_codes
 
