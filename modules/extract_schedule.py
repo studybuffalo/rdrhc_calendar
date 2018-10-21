@@ -53,7 +53,7 @@ def format_shift_details(shift_codes, date, comment, role):
             date != ''
     ]):
         # Split each shift code on spaces or slashes
-        shift_codes = re.split(r'(?:\s|/)+', shift_codes)
+        shift_codes = re.split(r'(?:\s|/)+', shift_codes.strip())
 
         # Remove any duplicate shift codes
         shift_codes = list(set(shift_codes))
