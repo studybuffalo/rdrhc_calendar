@@ -1,4 +1,4 @@
-"""SOMETHING"""
+"""Functions to extract schedule details from Excel file."""
 
 from datetime import datetime
 import logging
@@ -42,6 +42,38 @@ def return_column_index(sheet, user, name_row, col_start, col_end):
     raise ScheduleError('Unable to find index for {} (role = {}'.format(
         user['name'], role
     ))
+
+def format_shift_details(shift_codes, date, comment, role):
+    """Splits up multiple shift codes and assigns details."""
+    shifts = []
+
+    if all([
+            shift_codes != '',
+            re.match(r'\s+$', shift_codes) is None,
+            date != ''
+    ]):
+        # Split each shift code on spaces or slashes
+        shift_codes = re.split(r'(?:\s|/)+', shift_codes)
+
+        # Remove any duplicate shift codes
+        shift_codes = list(set(shift_codes))
+
+        for code in shift_codes:
+            if code != '' and re.match(r'\s+$', code) is None:
+                shifts.append({
+                    'shift_code': code,
+                    'start_date': date,
+                    'comment': comment,
+                })
+
+                # Add pharmacist 'X' shifts
+                if role == 'p' and code[-1:].upper() == 'X':
+                    shifts.append({
+                        'shift_code': 'X',
+                        'start_date': date,
+                        'comment': '',
+                    })
+    return shifts
 
 def extract_raw_schedule(
         book, sheet, user, index, row_start, row_end, date_col
@@ -114,32 +146,8 @@ def extract_raw_schedule(
             # Expected error when there is no comment
             comment = ''
 
-        # Add shift to master list if has date and non-whitespace shift code
-        if all([
-                shift_codes != '',
-                re.match(r'\s+$', shift_codes) is None,
-                date != ''
-        ]):
-            # Split each shift code on spaces or slashes
-            shift_codes = re.split(r'(?:\s|/)+', shift_codes)
-
-            # Remove any duplicate shift codes
-            shift_codes = list(set(shift_codes))
-
-            for code in shift_codes:
-                shifts.append({
-                    'shift_code': code,
-                    'start_date': date,
-                    'comment': comment,
-                })
-
-                # Add pharmacist 'X' shifts
-                if role == 'p' and code[-1:].upper() == 'X':
-                    shifts.append({
-                        'shift_code': 'X',
-                        'start_date': date,
-                        'comment': '',
-                    })
+        # Format and add shifts to the master list
+        shifts.extend(format_shift_details(shift_codes, date, comment, role))
 
     # Sort the shifts by date
     # Note: should occur automatically, but just in case
