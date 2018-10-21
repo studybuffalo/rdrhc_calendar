@@ -44,6 +44,16 @@ class MockRetrieveShiftCodeResponse(MockRequest200Response):
                 "saturday_start": "07:00:00", "saturday_duration": 8.25,
                 "sunday_start": "07:00:00", "sunday_duration": 8.25,
                 "stat_start": "07:00:00", "stat_duration": 8.25
+            },
+            {
+                "monday_start": null, "monday_duration": null,
+                "tuesday_start": null, "tuesday_duration": null,
+                "wednesday_start": null, "wednesday_duration": null,
+                "thursday_start": null, "thursday_duration": null,
+                "friday_start": null, "friday_duration": null,
+                "saturday_start": null, "saturday_duration": null,
+                "sunday_start": null, "sunday_duration": null,
+                "stat_start": null, "stat_duration": null
             }
         ]"""
 
@@ -242,6 +252,17 @@ def test_retrieve_shift_codes_time_conversions():
     shift_codes = schedule._retrieve_shift_codes()
 
     assert isinstance(shift_codes[0]['monday_start'], time)
+
+@patch('requests.get', MockRetrieveShiftCodeResponse)
+def test_retrieve_shift_codes_null_shift():
+    """Tests that time conversions accomodate null (None) shifts."""
+    schedule = assemble_schedule.Schedule(
+        OLD_SCHEDULE, EXTRACTED_SCHEDULE, USER, APP_CONFIG
+    )
+    shift_codes = schedule._retrieve_shift_codes()
+
+    assert shift_codes[1]['monday_start'] is None
+    assert shift_codes[1]['monday_duration'] is None
 
 @patch('requests.get', MockRetrieveShiftCodeResponse)
 def test_retrieve_shift_codes_decimal_conversions():
