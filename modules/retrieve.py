@@ -13,10 +13,7 @@ LOG = logging.getLogger(__name__)
 def get_date(tz_string):
     """Generates todays date as string (in format yyyy-mm-dd)"""
     schedule_tz = pytz.timezone(tz_string)
-    today = datetime.utcnow().astimezone(schedule_tz)
-
-    LOG.debug('UTC time is %s', datetime.utcnow())
-    LOG.debug('Today is %s', today)
+    today = datetime.now(schedule_tz)
 
     return today.strftime('%Y-%m-%d')
 
