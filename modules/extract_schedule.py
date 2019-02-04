@@ -207,7 +207,7 @@ def generate_raw_schedule(app_config, excel_files, user):
                 'Unable to find user index for %s (role = %s) on worksheet %s',
                 user['schedule_name'],
                 user['role'],
-                excel_sheet,
+                sheet_name,
             )
 
         if user_index:
