@@ -203,7 +203,7 @@ def generate_raw_schedule(app_config, excel_files, user):
                 config['col_end'],
             )
         except ScheduleError:
-            LOG.exception(
+            LOG.info(
                 'Unable to find user index for %s (role = %s) on worksheet %s',
                 user['schedule_name'],
                 user['role'],
