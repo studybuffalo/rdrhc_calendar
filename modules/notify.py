@@ -54,11 +54,10 @@ def update_first_email_sent_flag(user_id, app_config):
     )
 
     if response.status_code >= 400:
-        print('test')
         raise requests.ConnectionError(
             (
-                'Unable to connect to API ({}) and retrieve '
-                'user shift codes.'
+                'Unable to connect to API ({}) and update "first_email_sent" '
+                'flag. '
             ).format(api_url)
         )
 
@@ -128,7 +127,7 @@ def email_welcome(user, emails, app_config):
     }
     send_multipart_email(app_config, to_addresses, subject, body)
 
-    update_first_email_sent_flag(user['id'], app_config)
+    update_first_email_sent_flag(user['sb_user'], app_config)
 
 def update_additions_section(text, html, additions):
     """Updates the email templates' addition section."""
