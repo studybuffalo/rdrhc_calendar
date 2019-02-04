@@ -29,7 +29,7 @@ def assemble_app_configuration_details(config_path):
             'ext_t': config.get('schedules', 'type_t')
         },
         'a_excel': {
-            'sheet': config.get('schedules', 'sheet_a'),
+            'sheet': config.get('schedules', 'sheet_a').split('|'),
             'name_row': config.getint('schedules', 'name_row_a'),
             'col_start': config.getint('schedules', 'name_col_start_a'),
             'col_end': config.getint('schedules', 'name_col_end_a'),
@@ -38,7 +38,7 @@ def assemble_app_configuration_details(config_path):
             'date_col': config.getint('schedules', 'date_col_a')
         },
         'p_excel': {
-            'sheet': config.get('schedules', 'sheet_p'),
+            'sheet': config.get('schedules', 'sheet_p').split('|'),
             'name_row': config.getint('schedules', 'name_row_p'),
             'col_start': config.getint('schedules', 'name_col_start_p'),
             'col_end': config.getint('schedules', 'name_col_end_p'),
@@ -47,7 +47,7 @@ def assemble_app_configuration_details(config_path):
             'date_col': config.getint('schedules', 'date_col_p')
         },
         't_excel': {
-            'sheet': config.get('schedules', 'sheet_t'),
+            'sheet': config.get('schedules', 'sheet_t').split('|'),
             'name_row': config.getint('schedules', 'name_row_t'),
             'col_start': config.getint('schedules', 'name_col_start_t'),
             'col_end': config.getint('schedules', 'name_col_end_t'),

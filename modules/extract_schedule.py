@@ -169,40 +169,43 @@ def generate_raw_schedule(app_config, excel_files, user):
     LOG.debug('Opening the Excel worksheet')
     excel_sheet = None
 
-    if role == 'p':
-        try:
-            excel_book = openpyxl.load_workbook(file_loc)
-            excel_sheet = excel_book[config['sheet']]
-        except FileNotFoundError:
-            raise ScheduleError(
-                'Cannot open .xlsx file for user role = {}: {}'.format(
-                    role,
-                    file_loc
-                )
-            )
-    elif role in ('a', 't'):
-        try:
-            excel_book = xlrd.open_workbook(file_loc)
-            excel_sheet = excel_book.sheet_by_name(config['sheet'])
-        except FileNotFoundError:
-            raise ScheduleError(
-                'Cannot open .xls file for user role = {}: {}'.format(
-                    role, file_loc
-                )
-            )
+    raw_schedule = []
 
-    # Find column index for this user
-    user_index = return_column_index(
-        excel_sheet,
-        user,
-        config['name_row'],
-        config['col_start'],
-        config['col_end']
-    )
+    for sheet_name in config['sheet']:
+        if role == 'p':
+            try:
+                excel_book = openpyxl.load_workbook(file_loc)
+                excel_sheet = excel_book[sheet_name]
+            except FileNotFoundError:
+                raise ScheduleError(
+                    'Cannot open .xlsx file for user role = {}: {}'.format(
+                        role,
+                        file_loc
+                    )
+                )
+        elif role in ('a', 't'):
+            try:
+                excel_book = xlrd.open_workbook(file_loc)
+                excel_sheet = excel_book.sheet_by_name(sheet_name)
+            except FileNotFoundError:
+                raise ScheduleError(
+                    'Cannot open .xls file for user role = {}: {}'.format(
+                        role, file_loc
+                    )
+                )
 
-    raw_schedule = extract_raw_schedule(
-        excel_book, excel_sheet, user, user_index,
-        config['row_start'], config['row_end'], config['date_col']
-    )
+        # Find column index for this user
+        user_index = return_column_index(
+            excel_sheet,
+            user,
+            config['name_row'],
+            config['col_start'],
+            config['col_end']
+        )
+
+        raw_schedule += extract_raw_schedule(
+            excel_book, excel_sheet, user, user_index,
+            config['row_start'], config['row_end'], config['date_col']
+        )
 
     return raw_schedule
