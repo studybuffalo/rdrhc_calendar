@@ -27,7 +27,7 @@ def mock_xlrd_open_workbook(file_loc): # pylint: disable=unused-argument
 
 def mock_return_column_index(sheet, user, name, start, end): # pylint: disable=unused-argument
     """Mock of the return_column_index function."""
-    return 0
+    return 1
 
 def mock_extract_raw_schedule(book, sheet, user, index, start, end, col): # pylint: disable=unused-argument
     """Mock of the extract_raw_schedule function."""
@@ -266,6 +266,7 @@ def test_generate_raw_schedule_technician_multiple():
     }
     user = {
         'role': 't',
+        'schedule_name': 'test',
     }
 
     schedule = extract_schedule.generate_raw_schedule(

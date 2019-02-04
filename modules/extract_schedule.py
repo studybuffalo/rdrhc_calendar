@@ -179,8 +179,7 @@ def generate_raw_schedule(app_config, excel_files, user):
             except FileNotFoundError:
                 raise ScheduleError(
                     'Cannot open .xlsx file for user role = {}: {}'.format(
-                        role,
-                        file_loc
+                        role, file_loc
                     )
                 )
         elif role in ('a', 't'):
@@ -195,17 +194,33 @@ def generate_raw_schedule(app_config, excel_files, user):
                 )
 
         # Find column index for this user
-        user_index = return_column_index(
-            excel_sheet,
-            user,
-            config['name_row'],
-            config['col_start'],
-            config['col_end']
-        )
+        try:
+            user_index = return_column_index(
+                excel_sheet,
+                user,
+                config['name_row'],
+                config['col_start'],
+                config['col_end'],
+            )
+        except ScheduleError:
+            LOG.exception(
+                'Unable to find user index for %s (role = %s) on worksheet %s',
+                user['schedule_name'],
+                user['role'],
+                excel_sheet,
+            )
 
-        raw_schedule += extract_raw_schedule(
-            excel_book, excel_sheet, user, user_index,
-            config['row_start'], config['row_end'], config['date_col']
-        )
+        if user_index:
+            raw_schedule += extract_raw_schedule(
+                excel_book, excel_sheet, user, user_index,
+                config['row_start'], config['row_end'], config['date_col']
+            )
+
+        if not raw_schedule:
+            LOG.warning(
+                'No shifts found for user %s (role = %s)',
+                user['schedule_name'],
+                user['role'],
+            )
 
     return raw_schedule
