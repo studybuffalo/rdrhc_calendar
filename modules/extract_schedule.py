@@ -209,6 +209,7 @@ def generate_raw_schedule(app_config, excel_files, user):
                 user['role'],
                 sheet_name,
             )
+            user_index = None
 
         if user_index:
             raw_schedule += extract_raw_schedule(
