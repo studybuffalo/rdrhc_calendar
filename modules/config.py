@@ -20,6 +20,7 @@ def assemble_app_configuration_details(config_path):
         'api_headers': {
             'user-agent': 'rdrhc-calendar',
             'Authorization': 'Token {}'.format(config.get('api', 'token')),
+            'Content-Type': 'application/json',
         },
         'timezone': config.get('localization', 'timezone'),
         'excel': {
