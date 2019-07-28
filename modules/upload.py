@@ -46,7 +46,7 @@ def upload_user_schedule(app_config, user_id, schedule):
 
     response = requests.post(
         api_url,
-        data={'schedule': json.dumps(post_data)},
+        data={'schedule': post_data},
         headers=app_config['api_headers'],
     )
 
@@ -81,7 +81,7 @@ def update_missing_codes_database(app_config, missing_codes):
     if post_data:
         response = requests.post(
             api_url,
-            data={'codes': json.dumps(post_data)},
+            data={'codes': post_data},
             headers=app_config['api_headers'],
         )
 
