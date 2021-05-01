@@ -25,11 +25,11 @@ def mock_xlrd_open_workbook(file_loc): # pylint: disable=unused-argument
 
     return MockOpenWorkbook
 
-def mock_return_column_index(sheet, user, name, start, end): # pylint: disable=unused-argument
+def mock_return_column_index(sheet, user, cfg): # pylint: disable=unused-argument
     """Mock of the return_column_index function."""
     return 1
 
-def mock_extract_raw_schedule(book, sheet, user, index, start, end, col): # pylint: disable=unused-argument
+def mock_extract_raw_schedule(book, sheet, user, index, cfg): # pylint: disable=unused-argument
     """Mock of the extract_raw_schedule function."""
     return [1]
 
@@ -145,6 +145,7 @@ def test_generate_raw_schedule_pharmacist_single():
             'row_start': 1,
             'row_end': 100,
             'date_col': 0,
+            'ext': 'xlsx',
         }
     }
     excel_files = {
@@ -183,6 +184,7 @@ def test_generate_raw_schedule_technician_single():
             'row_start': 1,
             'row_end': 100,
             'date_col': 0,
+            'ext': 'xls',
         }
     }
     excel_files = {
@@ -221,6 +223,7 @@ def test_generate_raw_schedule_pharmacist_multiple():
             'row_start': 1,
             'row_end': 100,
             'date_col': 0,
+            'ext': 'xlsx',
         }
     }
     excel_files = {
@@ -259,6 +262,7 @@ def test_generate_raw_schedule_technician_multiple():
             'row_start': 1,
             'row_end': 100,
             'date_col': 0,
+            'ext': 'xls',
         }
     }
     excel_files = {
