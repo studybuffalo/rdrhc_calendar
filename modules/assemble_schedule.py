@@ -14,6 +14,7 @@ from modules.utils import convert_duration_to_hours_minutes
 
 LOG = logging.getLogger(__name__)
 
+
 def retrieve_old_schedule(app_config, user_id):
     """Retrieves the user's previous schedule from the database"""
 
