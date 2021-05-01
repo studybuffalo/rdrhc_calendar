@@ -31,7 +31,7 @@ from modules.manager import run_program
 
 # Collect all the application configuration values
 APP_CONFIG = assemble_app_configuration_details(
-    pathlib.Path(__file__).parent.absolute()
+    str(pathlib.Path(__file__).parent.absolute())
 )
 
 # Setup Sentry & Logging
