@@ -3,3 +3,7 @@
 .coverage
 htmlcov/
 reports/*
+
+# Config files
+*.cfg
+!.rdrhc_calendar.cfg
