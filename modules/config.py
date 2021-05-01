@@ -4,10 +4,13 @@
 import configparser
 from datetime import datetime
 from decimal import Decimal
+from unipath import Path
 
 
-def assemble_app_configuration_details(config_path):
+def assemble_app_configuration_details(root_path):
     """Collects and formats all the require configuration data"""
+    # Assemble Path to config file
+    config_path = Path(root_path, 'config', 'rdrhc_calendar.cfg')
     config = configparser.ConfigParser()
     config.read(config_path)
 
@@ -36,7 +39,8 @@ def assemble_app_configuration_details(config_path):
             'col_end': config.getint('schedules', 'name_col_end_a'),
             'row_start': config.getint('schedules', 'shift_row_start_a'),
             'row_end': config.getint('schedules', 'shift_row_end_a'),
-            'date_col': config.getint('schedules', 'date_col_a')
+            'date_col': config.getint('schedules', 'date_col_a'),
+            'ext': config.get('schedules', 'type_a'),
         },
         'p_excel': {
             'sheet': config.get('schedules', 'sheet_p').split('|'),
@@ -45,7 +49,8 @@ def assemble_app_configuration_details(config_path):
             'col_end': config.getint('schedules', 'name_col_end_p'),
             'row_start': config.getint('schedules', 'shift_row_start_p'),
             'row_end': config.getint('schedules', 'shift_row_end_p'),
-            'date_col': config.getint('schedules', 'date_col_p')
+            'date_col': config.getint('schedules', 'date_col_p'),
+            'ext': config.get('schedules', 'type_p'),
         },
         't_excel': {
             'sheet': config.get('schedules', 'sheet_t').split('|'),
@@ -54,7 +59,8 @@ def assemble_app_configuration_details(config_path):
             'col_end': config.getint('schedules', 'name_col_end_t'),
             'row_start': config.getint('schedules', 'shift_row_start_t'),
             'row_end': config.getint('schedules', 'shift_row_end_t'),
-            'date_col': config.getint('schedules', 'date_col_t')
+            'date_col': config.getint('schedules', 'date_col_t'),
+            'ext': config.get('schedules', 'type_t'),
         },
         'calendar_defaults': {
             'weekday_start': datetime.strptime(
