@@ -12,21 +12,21 @@ from modules.custom_exceptions import ScheduleError
 
 LOG = logging.getLogger(__name__)
 
-def return_column_index(sheet, user, name_row, col_start, col_end):
+def return_column_index(sheet, user, cfg):
     """Determines the Excel column containing the provided user"""
     LOG.debug('Looking for user index in Excel schedule')
 
     index = None
     role = user['role']
 
-    for i in range(col_start, col_end):
+    for i in range(cfg['col_start'], cfg['col_end']):
         try:
-            if role == 'p':
+            if cfg['ext'] == 'xlsx':
                 cell_name = str(
-                    sheet.cell(row=name_row, column=i).value
+                    sheet.cell(row=cfg['name_row'], column=i).value
                 ).strip()
-            elif role in ('a', 't'):
-                cell_name = str(sheet.cell(name_row, i).value).strip()
+            elif cfg['ext'] == 'xls':
+                cell_name = str(sheet.cell(cfg['name_row'], i).value).strip()
 
             if cell_name.upper() == user['schedule_name'].upper():
                 index = i
@@ -75,9 +75,7 @@ def format_shift_details(shift_codes, date, comment, role):
                     })
     return shifts
 
-def extract_raw_schedule(
-        book, sheet, user, index, row_start, row_end, date_col
-):
+def extract_raw_schedule(book, sheet, user, index, cfg):
     """Returns a list of schedule_shift objects."""
 
     # Extracts schedule details from spreadsheet
@@ -85,7 +83,7 @@ def extract_raw_schedule(
     role = user['role']
 
     # Generate comment map if this is an xls file
-    if role in ('a', 't'):
+    if cfg['ext'] == 'xls':
         comment_map = sheet.cell_note_map
 
     # Cycle through each row and extract shift date, code, and comments
@@ -93,14 +91,14 @@ def extract_raw_schedule(
 
     shifts = []
 
-    for i in range(row_start, row_end):
+    for i in range(cfg['row_start'], cfg['row_end']):
         # Extract date
         try:
-            if role == 'p':
-                date = sheet.cell(row=i, column=date_col).value.date()
-            elif role in ('a', 't'):
+            if cfg['ext'] == 'xlsx':
+                date = sheet.cell(row=i, column=cfg['date_col']).value.date()
+            elif cfg['ext'] == 'xls':
                 date = xlrd.xldate_as_tuple(
-                    sheet.cell(i, date_col).value, book.datemode
+                    sheet.cell(i, cfg['date_col']).value, book.datemode
                 )
                 date = datetime(*date).date()
         except AttributeError:
@@ -115,9 +113,9 @@ def extract_raw_schedule(
 
         # Extract shift code
         try:
-            if role == 'p':
+            if cfg['ext'] == 'xlsx':
                 shift_codes = sheet.cell(row=i, column=index).value.upper()
-            elif role  in ('a', 't'):
+            elif cfg['ext'] == 'xls':
                 shift_codes = sheet.cell(i, index).value.upper()
         except AttributeError:
             # Expected error when there is no shift code value
@@ -130,9 +128,9 @@ def extract_raw_schedule(
         comment = ''
 
         try:
-            if role == 'p':
+            if cfg['ext'] == 'xlsx':
                 comment = sheet.cell(row=i, column=index).comment
-            elif role in ('a', 't'):
+            elif cfg['ext'] == 'xls':
                 comment = comment_map[i, index].text
 
             if comment is None:
@@ -172,7 +170,7 @@ def generate_raw_schedule(app_config, excel_files, user):
     raw_schedule = []
 
     for sheet_name in config['sheet']:
-        if role == 'p':
+        if config['ext'] == 'xlsx':
             try:
                 excel_book = openpyxl.load_workbook(file_loc)
                 excel_sheet = excel_book[sheet_name]
@@ -182,7 +180,7 @@ def generate_raw_schedule(app_config, excel_files, user):
                         role, file_loc
                     )
                 )
-        elif role in ('a', 't'):
+        if config['ext'] == 'xls':
             try:
                 excel_book = xlrd.open_workbook(file_loc)
                 excel_sheet = excel_book.sheet_by_name(sheet_name)
@@ -195,13 +193,7 @@ def generate_raw_schedule(app_config, excel_files, user):
 
         # Find column index for this user
         try:
-            user_index = return_column_index(
-                excel_sheet,
-                user,
-                config['name_row'],
-                config['col_start'],
-                config['col_end'],
-            )
+            user_index = return_column_index(excel_sheet, user, config)
         except ScheduleError:
             LOG.info(
                 'Unable to find user index for %s (role = %s) on worksheet %s',
@@ -213,8 +205,7 @@ def generate_raw_schedule(app_config, excel_files, user):
 
         if user_index:
             raw_schedule += extract_raw_schedule(
-                excel_book, excel_sheet, user, user_index,
-                config['row_start'], config['row_end'], config['date_col']
+                excel_book, excel_sheet, user, user_index, config,
             )
 
         if not raw_schedule:
