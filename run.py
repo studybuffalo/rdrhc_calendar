@@ -1,8 +1,8 @@
 """Downloads, extracts, and uploads schedules for AHS CZ pharmacists.
-    Last Update: 2018-Oct-15
+    Last Update: 2021-May-01
 
     Copyright (c) Notices
-        2018  Joshua R. Torrance  <studybuffalo@studybuffalo.com>
+        2021  Joshua R. Torrance  <studybuffalo@studybuffalo.com>
 
     This program is free software: you can redistribute it and/or
     modify it under the terms of the GNU General Public License as
@@ -21,19 +21,18 @@
 
 import logging
 import logging.config
-import sys
+import pathlib
 
 import sentry_sdk
-from unipath import Path
 
 from modules.config import assemble_app_configuration_details, LOGGING_DICT
 from modules.manager import run_program
 
-# Determine the path to the config file
-CONFIG_PATH = Path(sys.argv[1])
 
 # Collect all the application configuration values
-APP_CONFIG = assemble_app_configuration_details(CONFIG_PATH)
+APP_CONFIG = assemble_app_configuration_details(
+    pathlib.Path(__file__).parent.absolute()
+)
 
 # Setup Sentry & Logging
 logging.config.dictConfig(LOGGING_DICT)
