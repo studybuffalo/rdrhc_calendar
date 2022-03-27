@@ -1,5 +1,5 @@
 """Unit tests for the notify module."""
-
+# pylint: disable=too-few-public-methods, no-self-use
 from copy import deepcopy
 from email.errors import MessageError
 from email.mime.text import MIMEText
@@ -23,6 +23,7 @@ class MockRetrieveEmailsResponse(MockRequest200Response):
             "test1@email.com",
             "test2@email.com"
         ]"""
+
 
 class MockSMTP():
     """A mock SMTP object for testing."""
@@ -49,6 +50,7 @@ class MockSMTP():
         self.to_addresses = ''
         self.content = ''
 
+
 @patch('requests.get', MockRequest404Response)
 def test_retrieve_emails_404_response():
     """Tests handling of 404 response in retrieve_emails."""
@@ -59,6 +61,7 @@ def test_retrieve_emails_404_response():
     else:
         assert False
 
+
 @patch('requests.get', MockRetrieveEmailsResponse)
 def test_retrieve_emails():
     """Tests handling of empty schedule in retrieve_emails."""
@@ -67,6 +70,7 @@ def test_retrieve_emails():
     assert len(emails) == 2
     assert emails[0] == 'test1@email.com'
     assert emails[1] == 'test2@email.com'
+
 
 @patch('requests.post', MockRequest404Response)
 def test_update_first_email_flag_404_response():
@@ -78,6 +82,7 @@ def test_update_first_email_flag_404_response():
     else:
         assert False
 
+
 @patch('requests.post', MockRequest200Response)
 def test_update_first_email_flag():
     """Tests 200 response in update_first_email_sent_flag_emails."""
@@ -87,6 +92,7 @@ def test_update_first_email_flag():
         assert False
     else:
         assert True
+
 
 def test_convert_emails_to_ddresses():
     """Tests that emails are properly formatted for smtplib."""
@@ -98,6 +104,7 @@ def test_convert_emails_to_ddresses():
     assert len(to_addresses) == 2
     assert to_addresses[0] == 'Test User <test1@email.com>'
     assert to_addresses[1] == 'Test User <test2@email.com>'
+
 
 def test_send_multipart_email_debug():
     """Tests that email configuration works properly in debug mode."""
@@ -118,6 +125,7 @@ def test_send_multipart_email_debug():
         assert False
     else:
         assert True
+
 
 @patch('smtplib.SMTP', MockSMTP)
 def test_send_multipart_email():
@@ -142,6 +150,7 @@ def test_send_multipart_email():
     else:
         assert True
 
+
 @patch('requests.post', MockRequest200Response)
 def test_email_welcome():
     """Tests that the welcome email sends properly."""
@@ -162,12 +171,13 @@ def test_email_welcome():
     else:
         assert True
 
+
 def test_update_additions_section_with_codes():
     """Tests that additions section is replaced with provided codes."""
-    with open(Path('tests/files/update.txt'), 'r') as text_file:
+    with open(Path('tests/files/update.txt'), 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
-    with open(Path('tests/files/update.html'), 'r') as html_file:
+    with open(Path('tests/files/update.html'), 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     additions = [
@@ -184,12 +194,13 @@ def test_update_additions_section_with_codes():
     assert ' - 2018-01-02 - A2' in text
     assert '<li>2018-01-02 - A2</li>' in html
 
+
 def test_update_additions_section_without_codes():
     """Tests that additions section is removed without provided codes."""
-    with open(Path('tests/files/update.txt'), 'r') as text_file:
+    with open(Path('tests/files/update.txt'), 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
-    with open(Path('tests/files/update.html'), 'r') as html_file:
+    with open(Path('tests/files/update.html'), 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     text, html = notify.update_additions_section(text, html, [])
@@ -197,12 +208,13 @@ def test_update_additions_section_without_codes():
     assert 'ADDITIONS' not in text
     assert 'ADDITIONS' not in html
 
+
 def test_update_deletions_section_with_codes():
     """Tests that deletions section is replaced with provided codes."""
-    with open(Path('tests/files/update.txt'), 'r') as text_file:
+    with open(Path('tests/files/update.txt'), 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
-    with open(Path('tests/files/update.html'), 'r') as html_file:
+    with open(Path('tests/files/update.html'), 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     deletions = [
@@ -219,12 +231,13 @@ def test_update_deletions_section_with_codes():
     assert ' - 2018-01-02 - A2' in text
     assert '<li>2018-01-02 - A2</li>' in html
 
+
 def test_update_deletions_section_without_codes():
     """Tests that deletions section is removed without provided codes."""
-    with open(Path('tests/files/update.txt'), 'r') as text_file:
+    with open(Path('tests/files/update.txt'), 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
-    with open(Path('tests/files/update.html'), 'r') as html_file:
+    with open(Path('tests/files/update.html'), 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     text, html = notify.update_deletions_section(text, html, [])
@@ -232,12 +245,13 @@ def test_update_deletions_section_without_codes():
     assert 'DELETIONS' not in text
     assert 'DELETIONS' not in html
 
+
 def test_update_changes_section_with_codes():
     """Tests that changes section is replaced with provided codes."""
-    with open(Path('tests/files/update.txt'), 'r') as text_file:
+    with open(Path('tests/files/update.txt'), 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
-    with open(Path('tests/files/update.html'), 'r') as html_file:
+    with open(Path('tests/files/update.html'), 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     changes = [
@@ -254,12 +268,13 @@ def test_update_changes_section_with_codes():
     assert ' - 2018-01-02 - A2 to B2' in text
     assert '<li>2018-01-02 - A2 to B2</li>' in html
 
+
 def test_update_changes_section_without_codes():
     """Tests that changes section is removed without provided codes."""
-    with open(Path('tests/files/update.txt'), 'r') as text_file:
+    with open(Path('tests/files/update.txt'), 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
-    with open(Path('tests/files/update.html'), 'r') as html_file:
+    with open(Path('tests/files/update.html'), 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     text, html = notify.update_changes_section(text, html, [])
@@ -267,12 +282,13 @@ def test_update_changes_section_without_codes():
     assert 'CHANGES' not in text
     assert 'CHANGES' not in html
 
+
 def test_update_missing_section_with_codes():
     """Tests that missing section is replaced with provided codes."""
-    with open(Path('tests/files/update.txt'), 'r') as text_file:
+    with open(Path('tests/files/update.txt'), 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
-    with open(Path('tests/files/update.html'), 'r') as html_file:
+    with open(Path('tests/files/update.html'), 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     missings = [
@@ -297,12 +313,13 @@ def test_update_missing_section_with_codes():
     assert ' - 2018-01-02 - A2' in text
     assert '<li>2018-01-02 - A2</li>' in html
 
+
 def test_update_missing_section_without_codes():
     """Tests that missing section is removed without provided codes."""
-    with open(Path('tests/files/update.txt'), 'r') as text_file:
+    with open(Path('tests/files/update.txt'), 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
-    with open(Path('tests/files/update.html'), 'r') as html_file:
+    with open(Path('tests/files/update.html'), 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     text, html = notify.update_missing_section(text, html, [], APP_CONFIG)
@@ -310,12 +327,13 @@ def test_update_missing_section_without_codes():
     assert 'MISSING SHIFT CODES' not in text
     assert 'MISSING SHIFT CODES' not in html
 
+
 def test_update_null_section_with_codes():
     """Tests that null section is replaced with provided codes."""
-    with open(Path('tests/files/update.txt'), 'r') as text_file:
+    with open(Path('tests/files/update.txt'), 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
-    with open(Path('tests/files/update.html'), 'r') as html_file:
+    with open(Path('tests/files/update.html'), 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     nulls = [
@@ -332,18 +350,20 @@ def test_update_null_section_with_codes():
     assert ' - 2018-01-02 - A2 to B2' in text
     assert '<li>2018-01-02 - A2 to B2</li>' in html
 
+
 def test_update_null_section_without_codes():
     """Tests that null section is removed without provided codes."""
-    with open(Path('tests/files/update.txt'), 'r') as text_file:
+    with open(Path('tests/files/update.txt'), 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
-    with open(Path('tests/files/update.html'), 'r') as html_file:
+    with open(Path('tests/files/update.html'), 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     text, html = notify.update_null_section(text, html, [])
 
     assert 'EXCLUDED CODES' not in text
     assert 'EXCLUDED CODES' not in html
+
 
 def test_email_schedule():
     """Tests that the schedule update email sends properly."""
@@ -374,12 +394,13 @@ def test_email_schedule():
     else:
         assert True
 
+
 def test_update_codes_section_with_codes():
     """Tests that codes section is replaced with provided codes."""
-    with open(Path('tests/files/missing_codes.txt'), 'r') as text_file:
+    with open(Path('tests/files/missing_codes.txt'), 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
-    with open(Path('tests/files/missing_codes.html'), 'r') as html_file:
+    with open(Path('tests/files/missing_codes.html'), 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     codes = ['A1', 'A2']
@@ -390,6 +411,7 @@ def test_update_codes_section_with_codes():
     assert '<li>A1</li>' in html
     assert ' - A2' in text
     assert '<li>A2</li>' in html
+
 
 def test_email_missing_codes():
     """Tests that the missing codes email sends properly."""

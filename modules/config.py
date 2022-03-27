@@ -22,7 +22,7 @@ def assemble_app_configuration_details(root_path):
         'api_url': config.get('api', 'url'),
         'api_headers': {
             'user-agent': 'rdrhc-calendar',
-            'Authorization': 'Token {}'.format(config.get('api', 'token')),
+            'Authorization': f'Token {config.get("api", "token")}',
             'Content-Type': 'application/json',
         },
         'timezone': config.get('localization', 'timezone'),
@@ -105,6 +105,7 @@ def assemble_app_configuration_details(root_path):
             'email_console': config.getboolean('debug', 'email_console')
         }
     }
+
 
 LOGGING_DICT = {
     'version': 1,

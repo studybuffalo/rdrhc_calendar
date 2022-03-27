@@ -1,35 +1,39 @@
 """Unit tests for extract schedule module."""
+# pylint: disable=too-few-public-methods, no-self-use
 from datetime import date
 from unittest.mock import patch
 
 from modules import extract_schedule
 
 
-def mock_openpyxl_load_workbook(file_loc): # pylint: disable=unused-argument
+def mock_openpyxl_load_workbook(file_loc):  # pylint: disable=unused-argument
     """Mock of the openpyxl load_workbook function."""
     return {
         'test1': None,
         'test2': None,
     }
 
-def mock_xlrd_open_workbook(file_loc): # pylint: disable=unused-argument
+
+def mock_xlrd_open_workbook(file_loc):  # pylint: disable=unused-argument
     """Mock of the xlrd open_workbook function."""
     class MockOpenWorkbook():
         """Mock of the open_workbook function object."""
         def __init__(self, file_loc):
             self.file_loc = file_loc
 
-        def sheet_by_name(sheet_name): # pylint: disable=unused-argument, no-self-argument
+        def sheet_by_name(sheet_name):  # pylint: disable=unused-argument, no-self-argument
             """Mocking the sheet_by_name method."""
             return None
 
     return MockOpenWorkbook
 
-def mock_return_column_index(sheet, user, cfg): # pylint: disable=unused-argument
+
+def mock_return_column_index(sheet, user, cfg):  # pylint: disable=unused-argument
     """Mock of the return_column_index function."""
     return 1
 
-def mock_extract_raw_schedule(book, sheet, user, index, cfg): # pylint: disable=unused-argument
+
+def mock_extract_raw_schedule(book, sheet, user, index, cfg):  # pylint: disable=unused-argument
     """Mock of the extract_raw_schedule function."""
     return [1]
 
@@ -44,6 +48,7 @@ def test_format_shift_details_one_code():
     assert shifts[0]['shift_code'] == 'A1'
     assert shifts[0]['start_date'] == date(2018, 1, 1)
     assert shifts[0]['comment'] == ''
+
 
 def test_format_shift_details_code_with_slash():
     """Tests format_shift_details returns two shifts with details."""
@@ -60,6 +65,7 @@ def test_format_shift_details_code_with_slash():
     assert shifts[1]['comment'] == 'TEST'
     assert shifts[0]['shift_code'] != shifts[1]['shift_code']
 
+
 def test_format_shift_details_code_with_space():
     """Tests format_shift_details returns two shifts with details."""
     shifts = extract_schedule.format_shift_details(
@@ -75,6 +81,7 @@ def test_format_shift_details_code_with_space():
     assert shifts[1]['comment'] == ''
     assert shifts[0]['shift_code'] != shifts[1]['shift_code']
 
+
 def test_format_shift_details_code_with_trailing_spaces():
     """Tests format_shift_details returns two shifts with details."""
     shifts = extract_schedule.format_shift_details(
@@ -86,6 +93,7 @@ def test_format_shift_details_code_with_trailing_spaces():
     assert shifts[0]['start_date'] == date(2018, 1, 1)
     assert shifts[0]['comment'] == ''
 
+
 def test_format_shift_details_code_with_leading_spaces():
     """Tests format_shift_details returns two shifts with details."""
     shifts = extract_schedule.format_shift_details(
@@ -96,6 +104,7 @@ def test_format_shift_details_code_with_leading_spaces():
     assert shifts[0]['shift_code'] == 'A1'
     assert shifts[0]['start_date'] == date(2018, 1, 1)
     assert shifts[0]['comment'] == ''
+
 
 def test_format_shift_details_x_shift():
     """Tests format_shift_details returns X shift."""
@@ -111,6 +120,7 @@ def test_format_shift_details_x_shift():
     assert shifts[1]['start_date'] == date(2018, 1, 1)
     assert shifts[1]['comment'] == ''
 
+
 def test_format_shift_details_x_shift_non_pharmacist():
     """Tests format_shift_details ignores X shift."""
     shifts = extract_schedule.format_shift_details(
@@ -121,6 +131,7 @@ def test_format_shift_details_x_shift_non_pharmacist():
     assert shifts[0]['shift_code'] == 'A1X'
     assert shifts[0]['start_date'] == date(2018, 1, 1)
     assert shifts[0]['comment'] == 'TEST'
+
 
 @patch(
     'modules.extract_schedule.openpyxl.load_workbook',
@@ -161,6 +172,7 @@ def test_generate_raw_schedule_pharmacist_single():
 
     assert len(schedule) == 1
 
+
 @patch(
     'modules.extract_schedule.xlrd.open_workbook',
     mock_xlrd_open_workbook
@@ -200,6 +212,7 @@ def test_generate_raw_schedule_technician_single():
 
     assert len(schedule) == 1
 
+
 @patch(
     'modules.extract_schedule.openpyxl.load_workbook',
     mock_openpyxl_load_workbook
@@ -238,6 +251,7 @@ def test_generate_raw_schedule_pharmacist_multiple():
     )
 
     assert len(schedule) == 2
+
 
 @patch(
     'modules.extract_schedule.xlrd.open_workbook',

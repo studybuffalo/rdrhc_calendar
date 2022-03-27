@@ -1,5 +1,5 @@
 """Utility functions for test cases."""
-
+# pylint: disable=too-few-public-methods
 from datetime import datetime, time
 from decimal import Decimal
 
@@ -13,6 +13,7 @@ class MockRequest404Response():
         self.data = data
         self.text = 'Mock 404 error'
 
+
 class MockRequest200Response():
     """A mock of request 200 response with custom text."""
     def __init__(self, url, headers, data=None):
@@ -21,9 +22,10 @@ class MockRequest200Response():
         self.status_code = 200
         self.data = data
 
+
 APP_CONFIG = {
     'api_url': 'https://127.0.0.1/api/',
-    'api_headers': {'user-agent': 'rdrhc-calendar',},
+    'api_headers': {'user-agent': 'rdrhc-calendar', },
     'calendar_defaults': {
         'weekday_start': time(1, 0, 0),
         'weekday_duration': Decimal('1.1'),
@@ -45,12 +47,14 @@ APP_CONFIG = {
     },
 }
 
+
 USER = {
     'id': 1,
     'sb_user': 10,
     'name': 'Test User',
     'calendar_name': 'SecretCalendar',
 }
+
 
 # Mock old and new schedules with additions, changes, deletions,
 # missing shift codes, and null shift codes
@@ -77,6 +81,7 @@ OLD_SCHEDULE = {
         {"shift_code": "C1", "start_date": "2018-06-01"},
     ],
 }
+
 
 EXTRACTED_SCHEDULE = [
     {
@@ -130,6 +135,7 @@ EXTRACTED_SCHEDULE = [
         'comment': '',
     },
 ]
+
 
 NEW_SCHEDULE = [
     {
@@ -197,6 +203,7 @@ NEW_SCHEDULE = [
     },
 ]
 
+
 # User-specific shift codes (for mocking API request)
 USER_SHIFT_CODES = [
     {
@@ -214,7 +221,7 @@ USER_SHIFT_CODES = [
         'id': 2, 'code': 'VR', 'sb_user': 1, 'role': 'p',
         'stat_start': None, 'stat_duration': None,
         'monday_start': None, 'monday_duration': None,
-        'tuesday_start': None, 'tuesday_duration':None,
+        'tuesday_start': None, 'tuesday_duration': None,
         'wednesday_start': None, 'wednesday_duration': None,
         'thursday_start': None, 'thursday_duration': None,
         'friday_start': None, 'friday_duration': None,
@@ -225,7 +232,7 @@ USER_SHIFT_CODES = [
         'id': 3, 'code': 'WR', 'sb_user': None, 'role': 'p',
         'stat_start': None, 'stat_duration': None,
         'monday_start': None, 'monday_duration': None,
-        'tuesday_start': None, 'tuesday_duration':None,
+        'tuesday_start': None, 'tuesday_duration': None,
         'wednesday_start': None, 'wednesday_duration': None,
         'thursday_start': None, 'thursday_duration': None,
         'friday_start': None, 'friday_duration': None,
@@ -233,6 +240,7 @@ USER_SHIFT_CODES = [
         'sunday_start': None, 'sunday_duration': None,
     },
 ]
+
 
 # Stat holidays (for mocking API request)
 STAT_HOLIDAYS = [

@@ -14,14 +14,14 @@ import requests
 from modules.utils import convert_duration_to_hours_minutes
 
 
-# Setup logger
 LOG = logging.getLogger(__name__)
+
 
 def retrieve_emails(user_id, app_config):
     """Retrieves the specified user's emails."""
     LOG.debug('Retrieving email(s) for user id = %s', user_id)
 
-    api_url = '{}users/{}/emails/'.format(app_config['api_url'], user_id)
+    api_url = f'{app_config["api_url"]}users/{user_id}/emails/'
 
     emails_response = requests.get(
         api_url,
@@ -30,23 +30,19 @@ def retrieve_emails(user_id, app_config):
 
     if emails_response.status_code >= 400:
         raise requests.ConnectionError(
-            (
-                'Unable to connect to API ({}) and retrieve '
-                'user shift codes.'
-            ).format(api_url)
+            f'Unable to connect to API ({api_url}) and retrieve user shift codes.'
         )
 
     emails = json.loads(emails_response.text)
 
     return emails
 
+
 def update_first_email_sent_flag(user_id, app_config):
     """Flags specified account as "first email sent"."""
     LOG.debug('Updating "first_email_sent" flag for user id = %s', user_id)
 
-    api_url = '{}users/{}/emails/first-sent/'.format(
-        app_config['api_url'], user_id
-    )
+    api_url = f'{app_config["api_url"]}users/{user_id}/emails/first-sent/'
 
     response = requests.post(
         api_url,
@@ -55,11 +51,9 @@ def update_first_email_sent_flag(user_id, app_config):
 
     if response.status_code >= 400:
         raise requests.ConnectionError(
-            (
-                'Unable to connect to API ({}) and update "first_email_sent" '
-                'flag. '
-            ).format(api_url)
+            f'Unable to connect to API ({api_url}) and update "first_email_sent" flag.'
         )
+
 
 def convert_emails_to_addresses(emails, user_name):
     """Formats list of emails for sending."""
@@ -74,6 +68,7 @@ def convert_emails_to_addresses(emails, user_name):
 
     return to_addresses
 
+
 def send_multipart_email(app_config, to_addresses, subject, body):
     """Constructs a MIMEMultipart email."""
     from_name = app_config['email']['from_name']
@@ -84,9 +79,7 @@ def send_multipart_email(app_config, to_addresses, subject, body):
     content['From'] = from_address
     content['To'] = ','.join(to_addresses)
     content['Subject'] = subject
-    content['List-Unsubscribe'] = '<{}>'.format(
-        app_config['email']['unsubscribe_link']
-    )
+    content['List-Unsubscribe'] = f'<{app_config["email"]["unsubscribe_link"]}>'
 
     content.attach(body['plain'])
     content.attach(body['html'])
@@ -102,6 +95,7 @@ def send_multipart_email(app_config, to_addresses, subject, body):
         server.sendmail(from_address, to_addresses, content.as_string())
         server.quit()
 
+
 def email_welcome(user, emails, app_config):
     """Sends a welcome email to any new user."""
     LOG.debug('Processing data to send user a welcome email')
@@ -109,13 +103,13 @@ def email_welcome(user, emails, app_config):
     # Collects text welcome email from template file
     text_loc = app_config['email']['welcome_text']
 
-    with open(text_loc, 'r') as text_file:
+    with open(text_loc, 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
     # Collects html welcome email from template file
     html_loc = app_config['email']['welcome_html']
 
-    with open(html_loc, 'r') as html_file:
+    with open(html_loc, 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     # Send the email
@@ -129,6 +123,7 @@ def email_welcome(user, emails, app_config):
 
     update_first_email_sent_flag(user['sb_user'], app_config)
 
+
 def update_additions_section(text, html, additions):
     """Updates the email templates' addition section."""
     # Manage added shifts
@@ -140,12 +135,8 @@ def update_additions_section(text, html, additions):
         additions_html = []
 
         for addition in additions:
-            additions_text.append(
-                ' - {}'.format(addition['email_message'])
-            )
-            additions_html.append(
-                '<li>{}</li>'.format(addition['email_message'])
-            )
+            additions_text.append(f' - {addition["email_message"]}')
+            additions_html.append(f'<li>{addition["email_message"]}</li>')
 
         text = text.replace('{{ additions }}', '\r\n'.join(additions_text))
         html = html.replace('{{ additions }}', '\r\n'.join(additions_html))
@@ -162,6 +153,7 @@ def update_additions_section(text, html, additions):
 
     return text, html
 
+
 def update_deletions_section(text, html, deletions):
     """Updates the email templates' deletion section."""
     LOG.debug('Updating the "deletions" section')
@@ -171,12 +163,8 @@ def update_deletions_section(text, html, deletions):
         deletions_html = []
 
         for deletion in deletions:
-            deletions_text.append(
-                ' - {}'.format(deletion['email_message'])
-            )
-            deletions_html.append(
-                '<li>{}</li>'.format(deletion['email_message'])
-            )
+            deletions_text.append(f' - {deletion["email_message"]}')
+            deletions_html.append(f'<li>{deletion["email_message"]}</li>')
 
         text = text.replace('{{ deletions }}', '\r\n'.join(deletions_text))
         html = html.replace('{{ deletions }}', '\r\n'.join(deletions_html))
@@ -193,6 +181,7 @@ def update_deletions_section(text, html, deletions):
 
     return text, html
 
+
 def update_changes_section(text, html, changes):
     """Updates the email templates' changes section."""
     LOG.debug('Updating the "changes" section')
@@ -202,12 +191,8 @@ def update_changes_section(text, html, changes):
         changes_html = []
 
         for change in changes:
-            changes_text.append(
-                ' - {}'.format(change['email_message'])
-            )
-            changes_html.append(
-                '<li>{}</li>'.format(change['email_message'])
-            )
+            changes_text.append(f' - {change["email_message"]}')
+            changes_html.append(f'<li>{change["email_message"]}</li>')
 
         text = text.replace('{{ changes }}', '\r\n'.join(changes_text))
         html = html.replace('{{ changes }}', '\r\n'.join(changes_html))
@@ -224,6 +209,7 @@ def update_changes_section(text, html, changes):
 
     return text, html
 
+
 def determine_end_time(start_time, duration):
     """Calculates an endtime based on start time and duration."""
     start_datetime = datetime(2000, 1, 1, start_time.hour, start_time.minute)
@@ -234,6 +220,7 @@ def determine_end_time(start_time, duration):
     )
 
     return end_time.strftime('%H:%M')
+
 
 def update_missing_section(text, html, missings, app_config):
     """Updates the email templates' missing section."""
@@ -276,12 +263,8 @@ def update_missing_section(text, html, missings, app_config):
         missing_html = []
 
         for missing in missings:
-            missing_text.append(
-                ' - {}'.format(missing['email_message'])
-            )
-            missing_html.append(
-                '<li>{}</li>'.format(missing['email_message'])
-            )
+            missing_text.append(f' - {missing["email_message"]}')
+            missing_html.append(f'<li>{missing["email_message"]}</li>')
 
         text = text.replace('{{ missing }}', '\r\n'.join(missing_text))
         html = html.replace('{{ missing }}', '\r\n'.join(missing_html))
@@ -298,6 +281,7 @@ def update_missing_section(text, html, missings, app_config):
 
     return text, html
 
+
 def update_null_section(text, html, nulls):
     """Updates the email templates' excluded (null) section."""
     LOG.debug('Updating the "excluded" section')
@@ -307,8 +291,8 @@ def update_null_section(text, html, nulls):
         null_html = []
 
         for null in nulls:
-            null_text.append(' - {}'.format(null['email_message']))
-            null_html.append('<li>{}</li>'.format(null['email_message']))
+            null_text.append(f' - {null["email_message"]}')
+            null_html.append(f'<li>{null["email_message"]}</li>')
 
         text = text.replace('{{ excluded }}', '\r\n'.join(null_text))
         html = html.replace('{{ excluded }}', '\r\n'.join(null_html))
@@ -325,6 +309,7 @@ def update_null_section(text, html, nulls):
 
     return text, html
 
+
 def email_schedule(user, emails, app_config, notification_details):
     """Emails user with any schedule changes"""
     LOG.debug('User qualifies for an update email to be sent')
@@ -334,13 +319,13 @@ def email_schedule(user, emails, app_config, notification_details):
 
     text_loc = app_config['email']['update_text']
 
-    with open(text_loc, 'r') as text_file:
+    with open(text_loc, 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
     # Opens the update email (html) file
     html_loc = app_config['email']['update_html']
 
-    with open(html_loc, 'r') as html_file:
+    with open(html_loc, 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     # Set the user name
@@ -379,6 +364,7 @@ def email_schedule(user, emails, app_config, notification_details):
     }
     send_multipart_email(app_config, to_addresses, subject, body)
 
+
 def update_codes_section(text, html, codes):
     """Replaces the codes section with all the missing shift codes."""
     LOG.debug('Formatting missing shift codes for email')
@@ -387,8 +373,8 @@ def update_codes_section(text, html, codes):
     missing_codes_html = []
 
     for code in codes:
-        missing_codes_text.append(' - {}'.format(code))
-        missing_codes_html.append('<li>{}</li>'.format(code))
+        missing_codes_text.append(f' - {code}')
+        missing_codes_html.append(f'<li>{code}</li>')
 
     text = text.replace('{{ codes }}', '\r\n'.join(missing_codes_text))
     html = html.replace('{{ codes }}', '\r\n'.join(missing_codes_html))
@@ -398,6 +384,7 @@ def update_codes_section(text, html, codes):
     html = html.replace('{% block codes %}', '')
 
     return text, html
+
 
 def email_missing_codes(missing_codes, app_config):
     """Emails owner with any new missing shift codes"""
@@ -409,13 +396,13 @@ def email_missing_codes(missing_codes, app_config):
 
     text_loc = app_config['email']['missing_codes_text']
 
-    with open(text_loc, 'r') as text_file:
+    with open(text_loc, 'r', encoding='utf8') as text_file:
         text = text_file.read().replace('\n', '\r\n')
 
     # Opens the notification (text) template
     html_loc = app_config['email']['missing_codes_html']
 
-    with open(html_loc, 'r') as html_file:
+    with open(html_loc, 'r', encoding='utf8') as html_file:
         html = html_file.read()
 
     text, html = update_codes_section(text, html, missing_codes)
@@ -431,6 +418,7 @@ def email_missing_codes(missing_codes, app_config):
         'html': MIMEText(html, 'html'),
     }
     send_multipart_email(app_config, to_addresses, subject, body)
+
 
 def notify_user(user, app_config, schedule):
     """Determines which emails to send to specified user."""

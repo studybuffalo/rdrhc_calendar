@@ -8,6 +8,7 @@ from unipath import Path
 
 LOG = logging.getLogger(__name__)
 
+
 def generate_full_day_dt_start_end(shift):
     """Generates start/end datetime strings for full day event."""
     start_date = shift['start_datetime'].strftime('%Y%m%d')
@@ -15,15 +16,16 @@ def generate_full_day_dt_start_end(shift):
     end_date = shift['start_datetime'].date() + timedelta(days=1)
     end_date = end_date.strftime('%Y%m%d')
 
-    dt_start = 'DTSTART;VALUE=DATE:{}'.format(start_date)
-    dt_end = 'DTEND;VALUE=DATE:{}'.format(end_date)
+    dt_start = f'DTSTART;VALUE=DATE:{start_date}'
+    dt_end = f'DTEND;VALUE=DATE:{end_date}'
 
     return {
         'dt_start': dt_start,
         'dt_end': dt_end,
         'start_date': start_date,
-        'start_time':start_time,
+        'start_time': start_time,
     }
+
 
 def generate_dt_start_end(shift):
     """Generates start/end datetime strings for shift."""
@@ -32,44 +34,36 @@ def generate_dt_start_end(shift):
     end_date = shift['end_datetime'].strftime('%Y%m%d')
     end_time = str(shift['end_datetime'].time()).replace(':', '').zfill(6)
 
-    dt_start = 'DTSTART;TZID=America/Edmonton:{}T{}'.format(
-        start_date, start_time
-    )
-    dt_end = 'DTEND;TZID=America/Edmonton:{}T{}'.format(
-        end_date, end_time
-    )
+    dt_start = f'DTSTART;TZID=America/Edmonton:{start_date}T{start_time}'
+    dt_end = f'DTEND;TZID=America/Edmonton:{end_date}T{end_time}'
 
     return {
         'dt_start': dt_start,
         'dt_end': dt_end,
         'start_date': start_date,
-        'start_time':start_time,
+        'start_time': start_time,
     }
+
 
 def generate_alarm(reminder_time, shift_code):
     """Generates VALARM text for calendar reminder."""
     lines = []
 
     if reminder_time == 0:
-        alarm_description = (
-            'DESCRIPTION:{} shift starting now'
-        ).format(shift_code)
+        alarm_description = f'DESCRIPTION:{shift_code} shift starting now'
     elif reminder_time == 1:
-        alarm_description = (
-            'DESCRIPTION:{} shift starting in {} minute'
-        ).format(shift_code, reminder_time)
+        alarm_description = f'DESCRIPTION:{shift_code} shift starting in {reminder_time} minute'
     else:
-        alarm_description = (
-            'DESCRIPTION:{} shift starting in {} minutes'
-        ).format(shift_code, reminder_time)
+        alarm_description = f'DESCRIPTION:{shift_code} shift starting in {reminder_time} minutes'
 
     lines.append('BEGIN:VALARM')
-    lines.append('TRIGGER:-PT{}M'.format(reminder_time))
+    lines.append(f'TRIGGER:-PT{reminder_time}M')
     lines.append('ACTION:DISPLAY')
     lines.append(alarm_description)
     lines.append('END:VALARM')
 
     return lines
+
 
 def generate_calendar_event(shift, user, dt_stamp, i):
     """Generates a .ics calendar event from a shift.
@@ -94,17 +88,17 @@ def generate_calendar_event(shift, user, dt_stamp, i):
         lines.append(event_details['dt_start'])
         lines.append(event_details['dt_end'])
 
-    lines.append('DTSTAMP:{}'.format(dt_stamp))
-    lines.append('UID:{}T{}@studybuffalo.com-{}'.format(
-        event_details['start_date'], event_details['start_time'], i
-    ))
-    lines.append('CREATED:{}'.format(dt_stamp))
-    lines.append('DESCRIPTION:{}'.format(shift['comment']))
-    lines.append('LAST-MODIFIED:{}'.format(dt_stamp))
+    lines.append(f'DTSTAMP:{dt_stamp}')
+    lines.append(
+        f'UID:{event_details["start_date"]}T{event_details["start_time"]}@studybuffalo.com-{i}'
+    )
+    lines.append(f'CREATED:{dt_stamp}')
+    lines.append(f'DESCRIPTION:{shift["comment"]}')
+    lines.append(f'LAST-MODIFIED:{dt_stamp}')
     lines.append('LOCATION:Red Deer Regional Hospital Centre')
     lines.append('SEQUENCE:0')
     lines.append('STATUS:CONFIRMED')
-    lines.append('SUMMARY:{} Shift'.format(shift['shift_code']))
+    lines.append(f'SUMMARY:{shift["shift_code"]} Shift')
     lines.append('TRANSP:TRANSPARENT')
 
     if user['reminder'] is not None:
@@ -113,6 +107,7 @@ def generate_calendar_event(shift, user, dt_stamp, i):
     lines.append('END:VEVENT')
 
     return lines
+
 
 def fold_calendar_lines(lines):
     """Folds all lines so that max length is 75."""
@@ -147,20 +142,21 @@ def fold_calendar_lines(lines):
 
     return folded_lines
 
+
 def save_calendar(lines, calendar_name, calendar_location):
     """Saves the provided lines as an .ics calendar file."""
-    calendar_title = '{}.ics'.format(calendar_name)
+    calendar_title = f'{calendar_name}.ics'
     file_path = Path(calendar_location, calendar_title)
 
     LOG.debug('Saving calendar to %s', file_path)
 
-    with open(file_path, 'w') as ics:
+    with open(file_path, 'w', encoding='utf8') as ics:
         for line in lines:
             ics.write(line)
 
+
 def generate_calendar(user, schedule, calendar_location):
     """Generates an .ics file from the extracted user schedule"""
-    # TODO: Combine shifts that have same start and end datetimes
     LOG.info('Generating .ics calendar for %s', user['name'])
 
     # Generate initial calendar information
