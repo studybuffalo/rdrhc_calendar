@@ -30,13 +30,27 @@ Unit tests for this application can be run via the standard pytest commands:
 .. code:: shell
 
   # Standard testing
-  pipenv run py.test tests/
+  pipenv run pytest
 
   # Tests with coverage reporting
-  pipenv run py.test --cov=modules --cov-report=xml tests/
+  pipenv run pytest --cov=modules --cov-report=xml
 
-  # Tests with JUnit reporting
-  pipenv run py.test --junitxml=reports/tests.xml tests/
 
 All reports can be placed in the reports folder, whose contents are excluded
 from source control.
+
+Linting
+=======
+
+Linting for this application can be run with the following commands:
+
+.. code:: shell
+
+  # Linting via Pylint (Excluding Tests)
+  $ pipenv run pylint run.py modules/
+
+  # Linting via Pylint (Tests Only)
+  $ pipenv run pylint tests/ --min-similarity-lines=20
+
+  # Linting via Pycodestyle
+  $ pipenv run pycodestyle run.py modules/ tests/
