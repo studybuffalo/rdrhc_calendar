@@ -19,4 +19,4 @@ pytest = "*"  # https://github.com/pytest-dev/pytest
 pytest-cov = "*"  # https://github.com/pytest-dev/pytest-cov
 
 [requires]
-python_version = "3.6"
+python_version = "3.7"
