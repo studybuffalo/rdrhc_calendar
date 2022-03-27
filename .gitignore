@@ -7,6 +7,7 @@ reports/*
 # Config files
 *.cfg
 !.rdrhc_calendar.cfg
+!setup.cfg
 
 # IDE Files
 settings.json
