@@ -1,5 +1,4 @@
 """Extracts and organizes a users schedule details."""
-
 from datetime import datetime, timedelta
 import json
 import logging
@@ -18,9 +17,7 @@ LOG = logging.getLogger(__name__)
 def retrieve_old_schedule(app_config, user_id):
     """Retrieves the user's previous schedule from the database"""
 
-    api_url = '{}shifts/{}/'.format(
-        app_config['api_url'], user_id
-    )
+    api_url = f'{app_config["api_url"]}shifts/{user_id}/'
 
     shifts_response = requests.get(
         api_url,
@@ -29,10 +26,7 @@ def retrieve_old_schedule(app_config, user_id):
 
     if shifts_response.status_code >= 400:
         raise ScheduleError(
-            (
-                'Unable to connect to API ({}) and retrieve '
-                'users old shifts.'
-            ).format(api_url)
+            f'Unable to connect to API ({api_url}) and retrieve users old shifts.'
         )
 
     shifts = json.loads(shifts_response.text)
@@ -66,6 +60,7 @@ def retrieve_old_schedule(app_config, user_id):
 
     return old_schedule
 
+
 def is_stat(check_date, stat_list):
     """Checks if provided date is a stat in stat_list"""
     for holiday_date in stat_list:
@@ -73,6 +68,7 @@ def is_stat(check_date, stat_list):
             return True
 
     return False
+
 
 def get_start_time_duration(stat_match, dow, code):
     """Returns proper start time and duration based on date."""
@@ -106,10 +102,11 @@ def get_start_time_duration(stat_match, dow, code):
 
     return start_time, duration
 
+
 def get_start_end_datetimes(start_date, start_time, duration):
     """Calculates and returns the start and end datetimes."""
     hours = int(duration)
-    minutes = int((duration*60) % 60)
+    minutes = int((duration * 60) % 60)
 
     start_datetime = datetime.combine(start_date, start_time)
 
@@ -119,6 +116,7 @@ def get_start_end_datetimes(start_date, start_time, duration):
     )
 
     return start_datetime, end_datetime
+
 
 def get_default_start_end_datetimes(start_date, defaults, stat_match, dow):
     """Determines the proper default start & end datetimes touse."""
@@ -153,16 +151,16 @@ def get_default_start_end_datetimes(start_date, defaults, stat_match, dow):
 
     return start_datetime, end_datetime
 
+
 class Schedule():
     """Holds all the users shifts and any noted modifications"""
-
     def _retrieve_shift_codes(self):
         """Takes a specific user and retrieves their shift times."""
         user_id = self.user['sb_user']
 
         LOG.debug('Collecting shift codes for user id = %s', user_id)
 
-        api_url = '{}shift-codes/{}/'.format(self.config['api_url'], user_id)
+        api_url = f'{self.config["api_url"]}shift-codes/{user_id}/'
 
         shift_code_response = requests.get(
             api_url,
@@ -171,10 +169,7 @@ class Schedule():
 
         if shift_code_response.status_code >= 400:
             raise ScheduleError(
-                (
-                    'Unable to connect to API ({}) and retrieve '
-                    'user shift codes.'
-                ).format(api_url)
+                f'Unable to connect to API ({api_url}) and retrieve user shift codes.'
             )
 
         shift_codes = json.loads(shift_code_response.text)
@@ -221,9 +216,7 @@ class Schedule():
             first_day = str(self.schedule_new[0]['start_date'])
             last_day = str(self.schedule_new[-1]['start_date'])
 
-            api_url = '{}stat-holidays/?date_start={}&date_end={}'.format(
-                self.config['api_url'], first_day, last_day
-            )
+            api_url = f'{self.config["api_url"]}stat-holidays/?date_start={first_day}&date_end={last_day}'
 
             stat_holidays_response = requests.get(
                 api_url,
@@ -232,10 +225,7 @@ class Schedule():
 
             if stat_holidays_response.status_code >= 400:
                 raise ScheduleError(
-                    (
-                        'Unable to connect to API ({}) and retrieve '
-                        'stat holidays.'
-                    ).format(api_url)
+                    f'Unable to connect to API ({api_url}) and retrieve stat holidays.'
                 )
 
             stat_holidays = []
@@ -290,10 +280,7 @@ class Schedule():
             # Record the details for this missing code
             self.notification_details['missing'].append({
                 'date': shift['start_date'],
-                'email_message': '{} - {}'.format(
-                    shift['start_date'].strftime('%Y-%m-%d'),
-                    shift['shift_code']
-                ),
+                'email_message': f'{shift["start_date"].strftime("%Y-%m-%d")} - {shift["shift_code"]}',
                 'shift_code': shift['shift_code'],
             })
 
@@ -302,7 +289,8 @@ class Schedule():
             )
 
         # Add any not-null shift
-        # TODO: Need way to determine if null shift was used
+        # Issue logged in GitHub: https://github.com/studybuffalo/rdrhc_calendar/issues/2
+
         # previously in users schedule
         if is_null is False:
             self.shifts.append({
@@ -316,10 +304,7 @@ class Schedule():
             # Record the details for this null code
             self.notification_details['null'].append({
                 'date': shift['start_date'],
-                'email_message': '{} - {}'.format(
-                    shift['start_date'].strftime('%Y-%m-%d'),
-                    shift['shift_code']
-                ),
+                'email_message': f'{shift["start_date"].strftime("%Y-%m-%d")} - {shift["shift_code"]}',
                 'shift_code': shift['shift_code'],
             })
 
@@ -335,7 +320,7 @@ class Schedule():
                 if shift_date == key:
                     key_match = True
 
-                    # TODO: Figure out why I ignore X shifts
+                    # https://github.com/studybuffalo/rdrhc_calendar/issues/3
                     # Do not add 'X' shifts
                     if shift['shift_code'].upper() != 'X':
                         # Append this shift to this key
@@ -366,7 +351,7 @@ class Schedule():
                     new_codes.append(shift['shift_code'])
 
                 new_codes_string = '/'.join(new_codes)
-                message = '{} - {}'.format(new_date, new_codes_string)
+                message = f'{new_date} - {new_codes_string}'
 
                 self.notification_details['additions'].append({
                     'date': new_date,
@@ -379,7 +364,7 @@ class Schedule():
         for old_date, old_shifts in self.schedule_old.items():
             if old_date not in self.schedule_new_by_date:
                 old_codes = '/'.join(str(s['shift_code']) for s in old_shifts)
-                message = '{} - {}'.format(old_date, old_codes)
+                message = f'{old_date} - {old_codes}'
 
                 self.notification_details['deletions'].append({
                     'date': old_date,
@@ -388,7 +373,7 @@ class Schedule():
 
     def determine_schedule_changes(self):
         """Determines which shifts are changes."""
-        for old_date, old_shifts in self.schedule_old.items():
+        for old_date, old_shifts in self.schedule_old.items():  # pylint: disable=too-many-nested-blocks
             if old_date in self.schedule_new_by_date:
                 # Shift exists for both old and new - check for changes
                 shift_match = []
@@ -416,9 +401,7 @@ class Schedule():
                         str(s['shift_code']) for s in old_shifts
                     )
 
-                    message = '{} - {} changed to {}'.format(
-                        old_date, old_codes_string, new_codes_string
-                    )
+                    message = f'{old_date} - {old_codes_string} changed to {new_codes_string}'
 
                     self.notification_details['changes'].append({
                         'date': old_date,
@@ -513,6 +496,7 @@ class Schedule():
             'null': [],
             'missing_upload': set(),
         }
+
 
 def assemble_schedule(app_config, excel_files, user):
     """Assembles all the schedule details for provided user."""

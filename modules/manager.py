@@ -15,23 +15,22 @@ from modules.retrieve import retrieve_schedule_file_paths
 
 LOG = logging.getLogger(__name__)
 
+
 def retrieve_users(app_config):
     """Retrieves all the calendar users."""
     LOG.info('Retrieving all calendar users')
 
-    response = requests.get(
-        '{}users/'.format(app_config['api_url']),
-        headers=app_config['api_headers'],
-    )
+    response = requests.get(f'{app_config["api_url"]}users/', headers=app_config['api_headers'])
 
     if response.status_code >= 400:
         raise requests.ConnectionError(
-            'Unable to connect to API ({})'.format(app_config['api_url'])
+            f'Unable to connect to API ({app_config["api_url"]})'
         )
 
     users = json.loads(response.text)
 
     return users
+
 
 def run_program(app_config):
     """Main function to run the program."""

@@ -1,5 +1,10 @@
 """Unit tests for the manager module."""
-# pylint: disable=protected-access
+# pylint: disable=protected-access, too-few-public-methods
+
+# MISSING TESTS:
+#  - x shift addition
+#  - x shift deletion
+#  - x shift change (addition & deletion)
 
 from datetime import datetime, date, time
 from decimal import Decimal
@@ -30,6 +35,7 @@ class MockRetrieveOldScheduleResponse(MockRequest200Response):
             {"text_shift_code": "C1", "date": "2018-12-01"}
         ]"""
 
+
 class MockRetrieveShiftCodeResponse(MockRequest200Response):
     """A mock of a response to the retireve_shift_codes function."""
     def __init__(self, url, headers):
@@ -57,6 +63,7 @@ class MockRetrieveShiftCodeResponse(MockRequest200Response):
             }
         ]"""
 
+
 class MockRetrieveStatHolidaysResponse(MockRequest200Response):
     """A mock of a response to the retrieve_stat_holidays function."""
     def __init__(self, url, headers):
@@ -66,6 +73,7 @@ class MockRetrieveStatHolidaysResponse(MockRequest200Response):
             "2018-07-01", "2018-08-06", "2018-09-03", "2018-10-08",
             "2018-11-11", "2018-12-25"
         ]"""
+
 
 @patch('requests.get', MockRequest404Response)
 def test_retrieve_old_schedule_404_response():
@@ -77,6 +85,7 @@ def test_retrieve_old_schedule_404_response():
     else:
         assert False
 
+
 @patch('requests.get', MockRetrieveOldScheduleResponse)
 def test_retrieve_old_schedule_group_by_date():
     """Tests handling of empty schedule in retrieve_stat_holidays."""
@@ -85,6 +94,7 @@ def test_retrieve_old_schedule_group_by_date():
     assert len(schedule) == 5
     assert len(schedule['2018-01-01']) == 1
     assert len(schedule['2018-04-01']) == 2
+
 
 @patch('requests.get', MockRetrieveOldScheduleResponse)
 def test_retrieve_old_schedule_x_shift_handling():
@@ -101,9 +111,11 @@ def test_retrieve_old_schedule_x_shift_handling():
 
     assert x_removed
 
+
 def test_is_stat_is_true_on_stat():
     """Tests that is_stat returns True on stat holiday."""
     assert assemble_schedule.is_stat(datetime(2018, 1, 1), STAT_HOLIDAYS)
+
 
 def test_is_stat_is_false_on_non_stat():
     """Tests that is_stat returns False on non-stat date."""
@@ -112,6 +124,7 @@ def test_is_stat_is_false_on_non_stat():
     )
 
     assert stat_result is False
+
 
 def test_get_start_time_duration_stat():
     """Checks get_start_time_duration returns proper stat values."""
@@ -122,6 +135,7 @@ def test_get_start_time_duration_stat():
     assert start_time == USER_SHIFT_CODES[0]['stat_start']
     assert duration == USER_SHIFT_CODES[0]['stat_duration']
 
+
 def test_get_start_time_duration_monday():
     """Checks get_start_time_duration returns proper Monday values."""
     start_time, duration = assemble_schedule.get_start_time_duration(
@@ -130,6 +144,7 @@ def test_get_start_time_duration_monday():
 
     assert start_time == USER_SHIFT_CODES[0]['monday_start']
     assert duration == USER_SHIFT_CODES[0]['monday_duration']
+
 
 def test_get_start_time_duration_tuesday():
     """Checks get_start_time_duration returns proper Tuesday values."""
@@ -140,6 +155,7 @@ def test_get_start_time_duration_tuesday():
     assert start_time == USER_SHIFT_CODES[0]['tuesday_start']
     assert duration == USER_SHIFT_CODES[0]['tuesday_duration']
 
+
 def test_get_start_time_duration_wednesday():
     """Checks get_start_time_duration returns proper Wednesday values."""
     start_time, duration = assemble_schedule.get_start_time_duration(
@@ -148,6 +164,7 @@ def test_get_start_time_duration_wednesday():
 
     assert start_time == USER_SHIFT_CODES[0]['wednesday_start']
     assert duration == USER_SHIFT_CODES[0]['wednesday_duration']
+
 
 def test_get_start_time_duration_thursday():
     """Checks get_start_time_duration returns proper Thursday values."""
@@ -158,6 +175,7 @@ def test_get_start_time_duration_thursday():
     assert start_time == USER_SHIFT_CODES[0]['thursday_start']
     assert duration == USER_SHIFT_CODES[0]['thursday_duration']
 
+
 def test_get_start_time_duration_friday():
     """Checks get_start_time_duration returns proper Friday values."""
     start_time, duration = assemble_schedule.get_start_time_duration(
@@ -166,6 +184,7 @@ def test_get_start_time_duration_friday():
 
     assert start_time == USER_SHIFT_CODES[0]['friday_start']
     assert duration == USER_SHIFT_CODES[0]['friday_duration']
+
 
 def test_get_start_time_duration_saturday():
     """Checks get_start_time_duration returns proper Satuday values."""
@@ -176,6 +195,7 @@ def test_get_start_time_duration_saturday():
     assert start_time == USER_SHIFT_CODES[0]['saturday_start']
     assert duration == USER_SHIFT_CODES[0]['saturday_duration']
 
+
 def test_get_start_time_duration_sunday():
     """Checks get_start_time_duration returns proper Sunday values."""
     start_time, duration = assemble_schedule.get_start_time_duration(
@@ -184,6 +204,7 @@ def test_get_start_time_duration_sunday():
 
     assert start_time == USER_SHIFT_CODES[0]['sunday_start']
     assert duration == USER_SHIFT_CODES[0]['sunday_duration']
+
 
 def test_get_start_time_duration_blank():
     """Checks get_start_time_duration returns proper blank."""
@@ -194,6 +215,7 @@ def test_get_start_time_duration_blank():
     assert start_time is None
     assert duration is None
 
+
 def test_get_start_end_datetimes():
     """Checks that get_start_end_datetimes returns proper values."""
     start, end = assemble_schedule.get_start_end_datetimes(
@@ -202,6 +224,7 @@ def test_get_start_end_datetimes():
 
     assert start == datetime(2018, 1, 1, 7, 0, 0)
     assert end == datetime(2018, 1, 1, 15, 15, 0)
+
 
 def test_get_default_start_end_datetimes_stat():
     """Checks get_default_start_end_datetimes returns stat default."""
@@ -212,6 +235,7 @@ def test_get_default_start_end_datetimes_stat():
     assert start == datetime(2018, 1, 1, 9, 0)
     assert end == datetime(2018, 1, 1, 18, 54)
 
+
 def test_get_default_start_end_datetimes_weekday():
     """Checks get_default_start_end_datetimes returns weekday default."""
     start, end = assemble_schedule.get_default_start_end_datetimes(
@@ -221,6 +245,7 @@ def test_get_default_start_end_datetimes_weekday():
     assert start == datetime(2018, 1, 1, 1, 0)
     assert end == datetime(2018, 1, 1, 2, 6)
 
+
 def test_get_default_start_end_datetimes_weekend():
     """Checks get_default_start_end_datetimes returns weekend default."""
     start, end = assemble_schedule.get_default_start_end_datetimes(
@@ -229,6 +254,7 @@ def test_get_default_start_end_datetimes_weekend():
 
     assert start == datetime(2018, 1, 1, 5, 0)
     assert end == datetime(2018, 1, 1, 10, 30)
+
 
 @patch('requests.get', MockRequest404Response)
 def test_retrieve_shift_codes_404_response():
@@ -243,6 +269,7 @@ def test_retrieve_shift_codes_404_response():
     else:
         assert False
 
+
 @patch('requests.get', MockRetrieveShiftCodeResponse)
 def test_retrieve_shift_codes_time_conversions():
     """Tests that time conversions work properly."""
@@ -252,6 +279,7 @@ def test_retrieve_shift_codes_time_conversions():
     shift_codes = schedule._retrieve_shift_codes()
 
     assert isinstance(shift_codes[0]['monday_start'], time)
+
 
 @patch('requests.get', MockRetrieveShiftCodeResponse)
 def test_retrieve_shift_codes_null_shift():
@@ -264,6 +292,7 @@ def test_retrieve_shift_codes_null_shift():
     assert shift_codes[1]['monday_start'] is None
     assert shift_codes[1]['monday_duration'] is None
 
+
 @patch('requests.get', MockRetrieveShiftCodeResponse)
 def test_retrieve_shift_codes_decimal_conversions():
     """Tests that decimal conversions work properly."""
@@ -273,6 +302,7 @@ def test_retrieve_shift_codes_decimal_conversions():
     shift_codes = schedule._retrieve_shift_codes()
 
     assert isinstance(shift_codes[0]['monday_duration'], Decimal)
+
 
 @patch('requests.get', MockRequest404Response)
 def test_retrieve_stat_holidays_404_response():
@@ -287,6 +317,7 @@ def test_retrieve_stat_holidays_404_response():
     else:
         assert False
 
+
 @patch('requests.get', MockRetrieveStatHolidaysResponse)
 def test_retrieve_stat_holidays_date_conversion():
     """Tests handling of empty schedule in retrieve_stat_holidays."""
@@ -297,6 +328,7 @@ def test_retrieve_stat_holidays_date_conversion():
 
     assert isinstance(stat_holidays[0], datetime)
 
+
 @patch('requests.get', MockRetrieveStatHolidaysResponse)
 def test_retrieve_stat_holidays_with_no_shifts():
     """Tests handling of empty schedule in retrieve_stat_holidays."""
@@ -306,6 +338,7 @@ def test_retrieve_stat_holidays_with_no_shifts():
     stat_holidays = schedule._retrieve_stat_holidays()
 
     assert stat_holidays is None
+
 
 def test_group_schedule_by_date():
     """Tests that the extracted schedule is properly grouped by date."""
@@ -319,6 +352,7 @@ def test_group_schedule_by_date():
     assert len(schedule.schedule_new_by_date['2018-01-01']) == 1
     assert len(schedule.schedule_new_by_date['2018-05-01']) == 2
     assert schedule.schedule_new_by_date['2018-05-01'][1]['shift_code'] == 'C2'
+
 
 def test_group_schedule_by_date_x_handling():
     """Tests that the extracted schedule ignores "X" shifts."""
@@ -341,6 +375,7 @@ def test_group_schedule_by_date_x_handling():
     assert len(schedule.schedule_new_by_date) == 7
     assert len(schedule.schedule_new_by_date['2018-01-01']) == 1
 
+
 def test_determine_shift_details_defined_shift():
     """Tests assigning details to a defined shift."""
     schedule = assemble_schedule.Schedule(
@@ -362,6 +397,7 @@ def test_determine_shift_details_defined_shift():
     assert schedule.shifts[0]['comment'] == ''
     assert schedule.shifts[0]['shift_code_fk'] == 1
 
+
 def test_determine_shift_details_with_comment():
     """Tests that comments are added to a shift."""
     schedule = assemble_schedule.Schedule(
@@ -378,6 +414,7 @@ def test_determine_shift_details_with_comment():
 
     assert len(schedule.shifts) == 1
     assert schedule.shifts[0]['comment'] == 'TEST'
+
 
 def test_determine_shift_details_null_shift():
     """Tests handling of null shift."""
@@ -398,6 +435,7 @@ def test_determine_shift_details_null_shift():
     assert len(null_details) == 1
     assert null_details[0]['date'] == date(2018, 1, 2)
     assert null_details[0]['email_message'] == '2018-01-02 - vr'
+
 
 def test_determine_shift_details_missing_shift():
     """Tests handling of missing shift."""
@@ -428,6 +466,7 @@ def test_determine_shift_details_missing_shift():
     assert missing[0]['email_message'] == '2018-01-02 - E1'
     assert 'E1' in missing_upload
 
+
 def test_determine_schedule_additions():
     """Tests identification of shift additions."""
     schedule = assemble_schedule.Schedule(
@@ -444,7 +483,6 @@ def test_determine_schedule_additions():
     assert additions[1]['date'] == '2018-08-01'
     assert additions[1]['email_message'] == '2018-08-01 - C1'
 
-# TODO: Add test for an X shift addition
 
 def test_determine_schedule_deletions():
     """Tests identification of shift deletions."""
@@ -460,7 +498,6 @@ def test_determine_schedule_deletions():
     assert deletions[0]['date'] == '2018-06-01'
     assert deletions[0]['email_message'] == '2018-06-01 - C1'
 
-# TODO: Add test for an X shift deletion
 
 def test_determine_schedule_changes():
     """Tests identification of shift changes."""
@@ -479,7 +516,6 @@ def test_determine_schedule_changes():
     assert changes[1]['date'] == '2018-04-01'
     assert changes[1]['email_message'] == '2018-04-01 - C1/D1 changed to D1'
 
-# TODO: Add test for X shift change (addition and deletion)
 
 def test_clean_missing_removes_shifts_properly():
     """Tests that old missing shifts are removed from list."""
@@ -511,6 +547,7 @@ def test_clean_missing_removes_shifts_properly():
     assert missing[0]['shift_code'] == 'C1F'
     assert missing[1]['shift_code'] == 'D1'
     assert missing[2]['shift_code'] == 'A1'
+
 
 def test_clean_null_removing_shifts_properly():
     """Tests that old null shifts are removed from list."""

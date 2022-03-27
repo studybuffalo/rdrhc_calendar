@@ -1,5 +1,4 @@
 """Functions to extract schedule details from Excel file."""
-
 from datetime import datetime
 import logging
 import re
@@ -11,6 +10,7 @@ from modules.custom_exceptions import ScheduleError
 
 
 LOG = logging.getLogger(__name__)
+
 
 def return_column_index(sheet, user, cfg):
     """Determines the Excel column containing the provided user"""
@@ -39,9 +39,10 @@ def return_column_index(sheet, user, cfg):
         return index
 
     # No index found - raise error
-    raise ScheduleError('Unable to find index for {} (role = {})'.format(
-        user['name'], role
-    ))
+    raise ScheduleError(
+        f'Unable to find index for {user["name"]} (role = {role})'
+    )
+
 
 def format_shift_details(shift_codes, date, comment, role):
     """Splits up multiple shift codes and assigns details."""
@@ -75,6 +76,75 @@ def format_shift_details(shift_codes, date, comment, role):
                     })
     return shifts
 
+
+def _extract_date(cfg, book, sheet, i):
+    """Extracts the date for a row."""
+    date = ''
+
+    try:
+        if cfg['ext'] == 'xlsx':
+            date = sheet.cell(row=i, column=cfg['date_col']).value.date()
+        elif cfg['ext'] == 'xls':
+            date = xlrd.xldate_as_tuple(
+                sheet.cell(i, cfg['date_col']).value, book.datemode
+            )
+            date = datetime(*date).date()
+    except AttributeError:
+        # Expected error when there is no date value
+        pass
+    except IndexError:
+        # Expected error when there is no date value
+        pass
+    except TypeError:
+        # Expected error when there is no date value
+        pass
+
+    return date
+
+
+def _extract_shift_codes(cfg, sheet, index, i):
+    """Extracts the shift code for a row."""
+    shift_codes = ''
+
+    try:
+        if cfg['ext'] == 'xlsx':
+            shift_codes = sheet.cell(row=i, column=index).value.upper()
+        elif cfg['ext'] == 'xls':
+            shift_codes = sheet.cell(i, index).value.upper()
+    except AttributeError:
+        # Expected error when there is no shift code value
+        pass
+    except IndexError:
+        # Expect error when there is no shift code value
+        pass
+
+    return shift_codes
+
+
+def _extract_comment(cfg, sheet, comment_map, index, i):
+    """Extracts the comments for a row."""
+    comment = ''
+
+    try:
+        if cfg['ext'] == 'xlsx':
+            comment = sheet.cell(row=i, column=index).comment
+        elif cfg['ext'] == 'xls':
+            comment = comment_map[i, index].text
+
+        if comment is None:
+            # Replaces 'None' comments as empty string for calendar use
+            comment = ''
+        else:
+            comment = str(comment)
+            comment = comment.replace('\n', ' ')
+            comment = comment.strip()
+    except KeyError:
+        # Expected error when there is no comment
+        pass
+
+    return comment
+
+
 def extract_raw_schedule(book, sheet, user, index, cfg):
     """Returns a list of schedule_shift objects."""
 
@@ -85,6 +155,8 @@ def extract_raw_schedule(book, sheet, user, index, cfg):
     # Generate comment map if this is an xls file
     if cfg['ext'] == 'xls':
         comment_map = sheet.cell_note_map
+    else:
+        comment_map = None
 
     # Cycle through each row and extract shift date, code, and comments
     LOG.debug('Cycling through rows of excel schedule')
@@ -92,57 +164,9 @@ def extract_raw_schedule(book, sheet, user, index, cfg):
     shifts = []
 
     for i in range(cfg['row_start'], cfg['row_end']):
-        # Extract date
-        try:
-            if cfg['ext'] == 'xlsx':
-                date = sheet.cell(row=i, column=cfg['date_col']).value.date()
-            elif cfg['ext'] == 'xls':
-                date = xlrd.xldate_as_tuple(
-                    sheet.cell(i, cfg['date_col']).value, book.datemode
-                )
-                date = datetime(*date).date()
-        except AttributeError:
-            # Expected error when there is no date value
-            date = ''
-        except IndexError:
-            # Expected error when there is no date value
-            date = ''
-        except TypeError:
-            # Expected error when there is no date value
-            date = ''
-
-        # Extract shift code
-        try:
-            if cfg['ext'] == 'xlsx':
-                shift_codes = sheet.cell(row=i, column=index).value.upper()
-            elif cfg['ext'] == 'xls':
-                shift_codes = sheet.cell(i, index).value.upper()
-        except AttributeError:
-            # Expected error when there is no shift code value
-            shift_codes = ''
-        except IndexError:
-            # Expect error when there is no shift code value
-            shift_codes = ''
-
-        # Extract cell comments
-        comment = ''
-
-        try:
-            if cfg['ext'] == 'xlsx':
-                comment = sheet.cell(row=i, column=index).comment
-            elif cfg['ext'] == 'xls':
-                comment = comment_map[i, index].text
-
-            if comment is None:
-                # Replaces 'None' comments as empty string for calendar use
-                comment = ''
-            else:
-                comment = str(comment)
-                comment = comment.replace('\n', ' ')
-                comment = comment.strip()
-        except KeyError:
-            # Expected error when there is no comment
-            comment = ''
+        date = _extract_date(cfg, book, sheet, i)
+        shift_codes = _extract_shift_codes(cfg, sheet, index, i)
+        comment = _extract_comment(cfg, sheet, comment_map, index, i)
 
         # Format and add shifts to the master list
         shifts.extend(format_shift_details(shift_codes, date, comment, role))
@@ -155,13 +179,14 @@ def extract_raw_schedule(book, sheet, user, index, cfg):
 
     return sorted_shifts
 
+
 def generate_raw_schedule(app_config, excel_files, user):
     """Returns a list of shift details for the specified user."""
 
     # Setup the required Excel details
     role = user['role']
     file_loc = excel_files[role]
-    config = app_config['{}_excel'.format(role).lower()]
+    config = app_config[f'{role}_excel'.lower()]
 
     # Open the proper Excel worksheet
     LOG.debug('Opening the Excel worksheet')
@@ -174,22 +199,18 @@ def generate_raw_schedule(app_config, excel_files, user):
             try:
                 excel_book = openpyxl.load_workbook(file_loc)
                 excel_sheet = excel_book[sheet_name]
-            except FileNotFoundError:
+            except FileNotFoundError as error:
                 raise ScheduleError(
-                    'Cannot open .xlsx file for user role = {}: {}'.format(
-                        role, file_loc
-                    )
-                )
+                    f'Cannot open .xlsx file for user role = {role}: {file_loc}'
+                ) from error
         if config['ext'] == 'xls':
             try:
                 excel_book = xlrd.open_workbook(file_loc)
                 excel_sheet = excel_book.sheet_by_name(sheet_name)
-            except FileNotFoundError:
+            except FileNotFoundError as error:
                 raise ScheduleError(
-                    'Cannot open .xls file for user role = {}: {}'.format(
-                        role, file_loc
-                    )
-                )
+                    f'Cannot open .xls file for user role = {role}: {file_loc}'
+                ) from error
 
         # Find column index for this user
         try:

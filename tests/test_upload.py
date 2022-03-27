@@ -1,5 +1,5 @@
 """Unit tests for the upload module."""
-
+# pylint: disable=too-few-public-methods
 from unittest.mock import patch
 
 from requests import ConnectionError as RequestsConnectionError
@@ -18,6 +18,7 @@ class MockUpdateMissingCodes200Response(MockRequest200Response):
         super().__init__(url, headers, data)
         self.text = '["A1", "B1", "C1"]'
 
+
 @patch('requests.delete', MockRequest404Response)
 def test_delete_user_schedule_404_response():
     """Tests handling of 404 response for delete_user_schedule."""
@@ -27,6 +28,7 @@ def test_delete_user_schedule_404_response():
         assert True
     else:
         assert False
+
 
 @patch('requests.delete', MockRequest200Response)
 def test_delete_user_schedule_200_response():
@@ -38,6 +40,7 @@ def test_delete_user_schedule_200_response():
     else:
         assert True
 
+
 @patch('requests.post', MockRequest404Response)
 def test_upload_user_schedule_404_response():
     """Tests handling of 404 response for upload_user_schedule."""
@@ -48,6 +51,7 @@ def test_upload_user_schedule_404_response():
     else:
         assert False
 
+
 @patch('requests.post', MockRequest200Response)
 def test_upload_user_schedule_200_response():
     """Tests handling of 404 response for upload_user_schedule."""
@@ -57,6 +61,7 @@ def test_upload_user_schedule_200_response():
         assert False
     else:
         assert True
+
 
 @patch('requests.delete', MockRequest404Response)
 @patch('requests.post', MockRequest200Response)
@@ -69,6 +74,7 @@ def test_update_schedule_database_delete_404_responses():
     else:
         assert False
 
+
 @patch('requests.delete', MockRequest200Response)
 @patch('requests.post', MockRequest404Response)
 def test_update_schedule_database_upload_404_responses():
@@ -79,6 +85,7 @@ def test_update_schedule_database_upload_404_responses():
         assert True
     else:
         assert False
+
 
 @patch('requests.delete', MockRequest200Response)
 @patch('requests.post', MockRequest200Response)
@@ -92,6 +99,7 @@ def test_update_schedule_database_200_responses():
         assert False
     else:
         assert True
+
 
 @patch('requests.post', MockRequest404Response)
 def test_update_missing_codes_database_404_response():
@@ -108,6 +116,7 @@ def test_update_missing_codes_database_404_response():
     else:
         assert False
 
+
 @patch('requests.post', MockUpdateMissingCodes200Response)
 def test_update_missing_codes_database_200_response():
     """Tests update_missing_codes_database 200 response handling."""
@@ -122,6 +131,7 @@ def test_update_missing_codes_database_200_response():
     assert response[0] == 'A1'
     assert response[1] == 'B1'
     assert response[2] == 'C1'
+
 
 @patch('requests.post', MockUpdateMissingCodes200Response)
 def test_update_missing_codes_database_no_codes():
