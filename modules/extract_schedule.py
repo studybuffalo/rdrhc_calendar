@@ -228,7 +228,12 @@ def generate_raw_schedule(app_config, excel_files, user):
     raw_schedule = []
 
     for sheet_name in config['sheet']:
-        excel_book, excel_sheet = _open_worksheet(config, file_loc, sheet_name, role)
+        try:
+            excel_book, excel_sheet = _open_worksheet(config, file_loc, sheet_name, role)
+        except ScheduleError:
+            # Expected error when worksheet is not valid
+            # Fails silently and continues loop
+            continue
 
         # Find column index for this user
         try:
