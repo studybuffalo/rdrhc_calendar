@@ -1,31 +1,23 @@
 """Unit tests for extract schedule module."""
-# pylint: disable=too-few-public-methods, no-self-use
+# pylint: disable=too-few-public-methods, no-self-use, protected-access
+import os
 from datetime import date
 from unittest.mock import patch
 
+from unipath import Path
+import openpyxl
+import xlrd
+
 from modules import extract_schedule
+from modules.custom_exceptions import ScheduleError
 
 
-def mock_openpyxl_load_workbook(file_loc):  # pylint: disable=unused-argument
-    """Mock of the openpyxl load_workbook function."""
-    return {
-        'test1': None,
-        'test2': None,
-    }
+def mock_open_worksheet(config, file_loc, sheet_name, role):
+    """Mock of the _open_worksheet function."""
+    book = {'config': config, 'file_loc': file_loc, 'role': role, 'sheet_name': sheet_name, 'test': 'book'}
+    sheet = {'config': config, 'file_loc': file_loc, 'role': role, 'sheet_name': sheet_name, 'test': 'sheet'}
 
-
-def mock_xlrd_open_workbook(file_loc):  # pylint: disable=unused-argument
-    """Mock of the xlrd open_workbook function."""
-    class MockOpenWorkbook():
-        """Mock of the open_workbook function object."""
-        def __init__(self, file_loc):
-            self.file_loc = file_loc
-
-        def sheet_by_name(sheet_name):  # pylint: disable=unused-argument, no-self-argument
-            """Mocking the sheet_by_name method."""
-            return None
-
-    return MockOpenWorkbook
+    return book, sheet
 
 
 def mock_return_column_index(sheet, user, cfg):  # pylint: disable=unused-argument
@@ -133,9 +125,69 @@ def test_format_shift_details_x_shift_non_pharmacist():
     assert shifts[0]['comment'] == 'TEST'
 
 
+def test__open_worksheet__xlsx__correct_worksheet():
+    """Tests xlsx extraction when correct worksheet provided."""
+    config = {'ext': 'xlsx'}
+    current_dir = Path(os.path.abspath(__file__)).parent
+    file_loc = Path(current_dir, 'files/example_xlsx.xlsx')
+
+    excel_book, excel_sheet = extract_schedule._open_worksheet(config, file_loc, 'Current Schedule', 'a')
+
+    # Confirm proper types returned
+    assert isinstance(excel_book, openpyxl.workbook.workbook.Workbook)
+    assert isinstance(excel_sheet, openpyxl.worksheet.worksheet.Worksheet)
+
+    # Confirm names of returned content
+    assert excel_sheet.title == 'Current Schedule'
+
+
+def test__open_worksheet__xlsx__incorrect_worksheet():
+    """Tests xlsx extraction when incorrect worksheet is provided."""
+    config = {'ext': 'xlsx'}
+    current_dir = Path(os.path.abspath(__file__)).parent
+    file_loc = Path(current_dir, 'files/example_xlsx.xlsx')
+
+    try:
+        extract_schedule._open_worksheet(config, file_loc, 'ERROR', 'a')
+    except ScheduleError as error:
+        assert 'Cannot open .xlsx file for user role = a: ' in str(error)
+    else:
+        assert False
+
+
+def test__open_worksheet__xls__correct_worksheet():
+    """Tests xls extraction when correct worksheet is provided."""
+    config = {'ext': 'xls'}
+    current_dir = Path(os.path.abspath(__file__)).parent
+    file_loc = Path(current_dir, 'files/example_xls.xls')
+
+    excel_book, excel_sheet = extract_schedule._open_worksheet(config, file_loc, 'Current Schedule', 'a')
+
+    # Confirm proper types returned
+    assert isinstance(excel_book, xlrd.book.Book)
+    assert isinstance(excel_sheet, xlrd.sheet.Sheet)
+
+    # Confirm names of returned content
+    assert excel_sheet.name == 'Current Schedule'
+
+
+def test__open_worksheet__xls__no_worksheet():
+    """Tests xls extraction when incorrect worksheet is provided."""
+    config = {'ext': 'xls'}
+    current_dir = Path(os.path.abspath(__file__)).parent
+    file_loc = Path(current_dir, 'files/example_xls.xls')
+
+    try:
+        extract_schedule._open_worksheet(config, file_loc, 'ERROR', 'a')
+    except ScheduleError as error:
+        assert 'Cannot open .xls file for user role = a: ' in str(error)
+    else:
+        assert False
+
+
 @patch(
-    'modules.extract_schedule.openpyxl.load_workbook',
-    mock_openpyxl_load_workbook
+    'modules.extract_schedule._open_worksheet',
+    mock_open_worksheet
 )
 @patch(
     'modules.extract_schedule.return_column_index',
@@ -174,8 +226,8 @@ def test_generate_raw_schedule_pharmacist_single():
 
 
 @patch(
-    'modules.extract_schedule.xlrd.open_workbook',
-    mock_xlrd_open_workbook
+    'modules.extract_schedule._open_worksheet',
+    mock_open_worksheet
 )
 @patch(
     'modules.extract_schedule.return_column_index',
@@ -214,8 +266,8 @@ def test_generate_raw_schedule_technician_single():
 
 
 @patch(
-    'modules.extract_schedule.openpyxl.load_workbook',
-    mock_openpyxl_load_workbook
+    'modules.extract_schedule._open_worksheet',
+    mock_open_worksheet
 )
 @patch(
     'modules.extract_schedule.return_column_index',
@@ -254,8 +306,8 @@ def test_generate_raw_schedule_pharmacist_multiple():
 
 
 @patch(
-    'modules.extract_schedule.xlrd.open_workbook',
-    mock_xlrd_open_workbook
+    'modules.extract_schedule._open_worksheet',
+    mock_open_worksheet
 )
 @patch(
     'modules.extract_schedule.return_column_index',
@@ -291,4 +343,5 @@ def test_generate_raw_schedule_technician_multiple():
         app_config, excel_files, user
     )
 
+    print(schedule)
     assert len(schedule) == 2

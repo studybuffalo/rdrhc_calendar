@@ -4,7 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-openpyxl = "==3.0.9"  # https://openpyxl.readthedocs.io/en/stable/
+colorama = {version = "*", sys_platform = "!='fake'"}  # https://github.com/pypa/pipenv/issues/1757
+openpyxl = "*"  # https://openpyxl.readthedocs.io/en/stable/
 pytz = "*"  # https://pythonhosted.org/pytz/
 requests = "*" # http://docs.python-requests.org/en/master/
 sentry-sdk = "*"  # https://docs.sentry.io/quickstart/?platform=python
