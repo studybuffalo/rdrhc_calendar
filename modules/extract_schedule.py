@@ -2,6 +2,7 @@
 from datetime import datetime
 import logging
 import re
+from tkinter import E
 
 import openpyxl
 import xlrd
@@ -180,6 +181,39 @@ def extract_raw_schedule(book, sheet, user, index, cfg):
     return sorted_shifts
 
 
+def _open_worksheet(config, file_loc, sheet_name, role):
+    """Opens up the workbook and worksheet for this user."""
+    if config['ext'] == 'xlsx':
+        try:
+            excel_book = openpyxl.load_workbook(file_loc)
+            excel_sheet = excel_book[sheet_name]
+
+            return excel_book, excel_sheet
+        except FileNotFoundError:
+            # Expected error when workbook not found
+            pass
+        except KeyError:
+            # Expected error when worksheet does not exist
+            pass
+    if config['ext'] == 'xls':
+        try:
+            excel_book = xlrd.open_workbook(file_loc)
+            excel_sheet = excel_book.sheet_by_name(sheet_name)
+
+            return excel_book, excel_sheet
+        except FileNotFoundError:
+            # Expected error when workbook not found
+            pass
+        except xlrd.XLRDError:
+            # Expected error when worksheet does not exist
+            pass
+
+    # No workbook or worksheet found - raise error
+    raise ScheduleError(
+        f'Cannot open .{config["ext"]} file for user role = {role}: {file_loc}'
+    )
+
+
 def generate_raw_schedule(app_config, excel_files, user):
     """Returns a list of shift details for the specified user."""
 
@@ -195,32 +229,16 @@ def generate_raw_schedule(app_config, excel_files, user):
     raw_schedule = []
 
     for sheet_name in config['sheet']:
-        if config['ext'] == 'xlsx':
-            try:
-                excel_book = openpyxl.load_workbook(file_loc)
-                excel_sheet = excel_book[sheet_name]
-            except FileNotFoundError as error:
-                raise ScheduleError(
-                    f'Cannot open .xlsx file for user role = {role}: {file_loc}'
-                ) from error
-        if config['ext'] == 'xls':
-            try:
-                excel_book = xlrd.open_workbook(file_loc)
-                excel_sheet = excel_book.sheet_by_name(sheet_name)
-            except FileNotFoundError as error:
-                raise ScheduleError(
-                    f'Cannot open .xls file for user role = {role}: {file_loc}'
-                ) from error
+        excel_book, excel_sheet = _open_worksheet(config, file_loc, sheet_name, role)
 
         # Find column index for this user
         try:
             user_index = return_column_index(excel_sheet, user, config)
         except ScheduleError:
             LOG.info(
-                'Unable to find user index for %s (role = %s) on worksheet %s',
+                'Unable to find user index for %s (role = %s).',
                 user['schedule_name'],
                 user['role'],
-                sheet_name,
             )
             user_index = None
 
@@ -229,11 +247,11 @@ def generate_raw_schedule(app_config, excel_files, user):
                 excel_book, excel_sheet, user, user_index, config,
             )
 
-        if not raw_schedule:
-            LOG.warning(
-                'No shifts found for user %s (role = %s)',
-                user['schedule_name'],
-                user['role'],
-            )
+    if not raw_schedule:
+        LOG.warning(
+            'No shifts found for user %s (role = %s)',
+            user['schedule_name'],
+            user['role'],
+        )
 
     return raw_schedule
