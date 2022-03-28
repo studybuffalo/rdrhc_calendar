@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-openpyxl = "==2.5.5"  # https://openpyxl.readthedocs.io/en/stable/
+openpyxl = "==3.0.9"  # https://openpyxl.readthedocs.io/en/stable/
 pytz = "*"  # https://pythonhosted.org/pytz/
 requests = "*" # http://docs.python-requests.org/en/master/
 sentry-sdk = "*"  # https://docs.sentry.io/quickstart/?platform=python
