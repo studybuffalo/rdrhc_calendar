@@ -2,7 +2,6 @@
 from datetime import datetime
 import logging
 import re
-from tkinter import E
 
 import openpyxl
 import xlrd
