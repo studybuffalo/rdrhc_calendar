@@ -13,7 +13,11 @@ Initial Setup (Development)
 
   pipenv install --dev
 
-2. Create the required config file - TODO: add demo config file.
+2. Create the required config file - you may copy the example config
+   located at ``/config/.rdrhc_calendar.cfg``.
+
+3. Update the config file to specify all the required details (as
+   outlined in the example config file.
 
 Running Program
 ===============
