@@ -9,5 +9,11 @@ reports/*
 !.rdrhc_calendar.cfg
 !setup.cfg
 
+# Development files
+dev_calendars/*
+!dev_calendars/.gitkeep
+dev_schedules/*
+!dev_schedules/.gitkeep
+
 # IDE Files
 settings.json
