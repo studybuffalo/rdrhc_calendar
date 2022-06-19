@@ -1,40 +1,40 @@
 """Retrieves the paths to the required schedule files."""
-from datetime import datetime
 import logging
-
-import pytz
-from unipath import Path
+from pathlib import Path
 
 
 LOG = logging.getLogger(__name__)
 
 
-def get_date(tz_string):
-    """Generates todays date as string (in format yyyy-mm-dd)"""
-    schedule_tz = pytz.timezone(tz_string)
-    today = datetime.now(schedule_tz)
+def _get_most_recent_file(directory, glob_statement):
+    """Returns the most recent file from list of files."""
+    files = directory.glob(glob_statement)
 
-    return today.strftime('%Y-%m-%d')
+    try:
+        return max(files, key=lambda file: file.stat().st_mtime)
+    except ValueError as exception:
+        raise FileNotFoundError(f'Unable to find file for glob: "{glob_statement}".') from exception
 
 
 def retrieve_schedule_file_paths(config):
     """Creates the path to the schedules from supplied config file."""
-    schedule_loc = config['excel']['schedule_loc']
+    schedule_loc = Path(config['excel']['schedule_loc'])
 
-    date = get_date(config['timezone'])
+    # Get the most recent assistant file
+    assistant_glob = f'assistant_*.{config["excel"]["ext_a"]}'
+    assistant_latest = _get_most_recent_file(schedule_loc, assistant_glob)
 
-    # Assemble the details for the assistant schedule
-    file_name_a = f'{date}_assistant.{config["excel"]["ext_a"]}'
+    # Get the most recent pharmacist file
+    pharmacist_glob = f'pharmacist_*.{config["excel"]["ext_p"]}'
+    pharmacist_latest = _get_most_recent_file(schedule_loc, pharmacist_glob)
 
-    # Assemble the details for the pharmacist schedule
-    file_name_p = f'{date}_pharmacist.{config["excel"]["ext_p"]}'
-
-    # Assemble the details for the technician schedule
-    file_name_t = f'{date}_technician.{config["excel"]["ext_t"]}'
+    # Get the most recent technician file
+    technician_glob = f'technician_*.{config["excel"]["ext_t"]}'
+    technician_latest = _get_most_recent_file(schedule_loc, technician_glob)
 
     # Return the final details
     return {
-        'a': Path(schedule_loc, file_name_a),
-        'p': Path(schedule_loc, file_name_p),
-        't': Path(schedule_loc, file_name_t),
+        'a': Path(assistant_latest),
+        'p': Path(pharmacist_latest),
+        't': Path(technician_latest),
     }

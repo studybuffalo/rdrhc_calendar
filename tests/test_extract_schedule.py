@@ -1,5 +1,5 @@
 """Unit tests for extract schedule module."""
-# pylint: disable=too-few-public-methods, no-self-use, protected-access
+# pylint: disable=too-few-public-methods, protected-access
 import os
 from datetime import date
 from unittest.mock import patch
@@ -129,7 +129,7 @@ def test__open_worksheet__xlsx__correct_worksheet():
     """Tests xlsx extraction when correct worksheet provided."""
     config = {'ext': 'xlsx'}
     current_dir = Path(os.path.abspath(__file__)).parent
-    file_loc = Path(current_dir, 'files/example_xlsx.xlsx')
+    file_loc = Path(current_dir, 'files/example_xlsx 1.xlsx')
 
     excel_book, excel_sheet = extract_schedule._open_worksheet(config, file_loc, 'Current Schedule', 'a')
 
