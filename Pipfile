@@ -3,6 +3,7 @@ url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
+
 [packages]
 colorama = {version = "*", sys_platform = "!='fake'"}  # https://github.com/pypa/pipenv/issues/1757
 openpyxl = "*"  # https://openpyxl.readthedocs.io/en/stable/
@@ -12,12 +13,14 @@ sentry-sdk = "*"  # https://docs.sentry.io/quickstart/?platform=python
 Unipath = "*"  # https://github.com/mikeorr/Unipath
 xlrd = "*"  # https://xlrd.readthedocs.io/en/latest/
 
+
 [dev-packages]
 coverage = "*"  # https://github.com/nedbat/coveragepy
 pycodestyle = "*"  # https://github.com/pycqa/pycodestyle
 pylint = "*"  # https://github.com/PyCQA/pylint/
 pytest = "*"  # https://github.com/pytest-dev/pytest
 pytest-cov = "*"  # https://github.com/pytest-dev/pytest-cov
+
 
 [requires]
 python_version = "3.7"
