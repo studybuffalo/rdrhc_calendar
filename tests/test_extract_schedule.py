@@ -1,5 +1,5 @@
 """Unit tests for extract schedule module."""
-# pylint: disable=too-few-public-methods, no-self-use, protected-access
+# pylint: disable=too-few-public-methods, protected-access
 import os
 from datetime import date
 from unittest.mock import patch

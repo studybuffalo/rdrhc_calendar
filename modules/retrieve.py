@@ -12,8 +12,8 @@ def _get_most_recent_file(directory, glob_statement):
 
     try:
         return max(files, key=lambda file: file.stat().st_mtime)
-    except ValueError:
-        raise FileNotFoundError(f'Unable to find file for glob: "{glob_statement}".')
+    except ValueError as exception:
+        raise FileNotFoundError(f'Unable to find file for glob: "{glob_statement}".') from exception
 
 
 def retrieve_schedule_file_paths(config):

@@ -1,4 +1,5 @@
 """Tests for the retrieve module."""
+# pylint: disable=protected-access
 import os
 from pathlib import Path
 from unittest.mock import patch
@@ -42,6 +43,7 @@ def test__get_most_recent_file__multiple_files():
     file = retrieve._get_most_recent_file(directory, glob_statement)
 
     assert 'example_xlsx 2.xlsx' in str(file)
+
 
 def test__get_most_recent_file__no_files():
     """Tests expected handling when no files available."""

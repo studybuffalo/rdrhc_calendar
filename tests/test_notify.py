@@ -1,5 +1,5 @@
 """Unit tests for the notify module."""
-# pylint: disable=too-few-public-methods, no-self-use
+# pylint: disable=too-few-public-methods
 from copy import deepcopy
 from email.errors import MessageError
 from email.mime.text import MIMEText
